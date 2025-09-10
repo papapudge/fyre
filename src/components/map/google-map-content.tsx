@@ -2,8 +2,10 @@
 
 import { Wrapper, Status } from "@googlemaps/react-wrapper"
 import { useCallback, useEffect, useRef, useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { AnimatedButton } from "@/components/ui/animated-button"
 import { AdvancedMapFeatures } from "./advanced-map-features"
 
 // Marker icons will be created inside the component when Google Maps is loaded
@@ -19,10 +21,10 @@ interface MapContentProps {
   center: [number, number]
   zoom: number
   layers: LayerVisibility
-  mockStations: any[]
-  mockVehicles: any[]
-  mockHydrants: any[]
-  mockIncidents: any[]
+  stations: any[]
+  vehicles: any[]
+  hydrants: any[]
+  incidents: any[]
   getStatusColor: (status: string) => string
   getSeverityColor: (severity: string) => string
   showAdvancedFeatures?: boolean
@@ -44,10 +46,10 @@ function MapComponent({
   center,
   zoom,
   layers,
-  mockStations,
-  mockVehicles,
-  mockHydrants,
-  mockIncidents,
+  stations,
+  vehicles,
+  hydrants,
+  incidents,
   getStatusColor,
   getSeverityColor,
   showAdvancedFeatures = false,
@@ -148,10 +150,10 @@ function MapComponent({
     const newMarkers: google.maps.Marker[] = []
 
     // Add station markers
-    if (layers.stations) {
-      mockStations.forEach((station) => {
+    if (layers.stations && stations && Array.isArray(stations)) {
+      stations.forEach((station) => {
         const marker = new google.maps.Marker({
-          position: { lat: station.lat, lng: station.lng },
+          position: { lat: station.latitude, lng: station.longitude },
           map: map,
           icon: markerIcons.station,
           title: station.name
@@ -179,23 +181,23 @@ function MapComponent({
     }
 
     // Add vehicle markers
-    if (layers.vehicles) {
-      mockVehicles.forEach((vehicle) => {
+    if (layers.vehicles && vehicles && Array.isArray(vehicles)) {
+      vehicles.forEach((vehicle) => {
         const iconType = vehicle.type.toLowerCase() as keyof typeof markerIcons
         const icon = markerIcons[iconType] || markerIcons.engine
 
         const marker = new google.maps.Marker({
-          position: { lat: vehicle.lat, lng: vehicle.lng },
+          position: { lat: vehicle.latitude, lng: vehicle.longitude },
           map: map,
           icon: icon,
-          title: vehicle.unit
+          title: vehicle.name
         })
 
         marker.addListener("click", () => {
           const statusColor = getStatusColor(vehicle.status)
           infoWindow.setContent(`
             <div class="p-2 min-w-[200px]">
-              <h3 class="font-semibold text-lg">${vehicle.unit}</h3>
+              <h3 class="font-semibold text-lg">${vehicle.name}</h3>
               <p class="text-sm text-gray-600">Type: ${vehicle.type}</p>
               <span class="inline-block px-2 py-1 text-xs rounded-full bg-${statusColor}-100 text-${statusColor}-800 mt-1">
                 ${vehicle.status}
@@ -216,10 +218,10 @@ function MapComponent({
     }
 
     // Add hydrant markers
-    if (layers.hydrants) {
-      mockHydrants.forEach((hydrant) => {
+    if (layers.hydrants && hydrants && Array.isArray(hydrants)) {
+      hydrants.forEach((hydrant) => {
         const marker = new google.maps.Marker({
-          position: { lat: hydrant.lat, lng: hydrant.lng },
+          position: { lat: hydrant.latitude, lng: hydrant.longitude },
           map: map,
           icon: markerIcons.hydrant,
           title: hydrant.hydrantId
@@ -250,10 +252,10 @@ function MapComponent({
     }
 
     // Add incident markers
-    if (layers.incidents) {
-      mockIncidents.forEach((incident) => {
+    if (layers.incidents && incidents && Array.isArray(incidents)) {
+      incidents.forEach((incident) => {
         const marker = new google.maps.Marker({
-          position: { lat: incident.lat, lng: incident.lng },
+          position: { lat: incident.latitude, lng: incident.longitude },
           map: map,
           icon: markerIcons.incident,
           title: incident.incidentNumber
@@ -285,7 +287,7 @@ function MapComponent({
 
     markersRef.current = newMarkers
     setMarkers(newMarkers)
-  }, [map, infoWindow, layers, mockStations, mockVehicles, mockHydrants, mockIncidents, getStatusColor, getSeverityColor, markerIcons])
+  }, [map, infoWindow, layers, stations, vehicles, hydrants, incidents, getStatusColor, getSeverityColor, markerIcons])
 
   // Listen for custom events from info windows
   useEffect(() => {
@@ -293,7 +295,7 @@ function MapComponent({
       const station = event.detail
       // Center map on station
       if (map) {
-        map.setCenter({ lat: station.lat, lng: station.lng })
+        map.setCenter({ lat: station.latitude, lng: station.longitude })
         map.setZoom(16)
       }
       infoWindow?.close()
@@ -303,7 +305,7 @@ function MapComponent({
       const vehicle = event.detail
       // Center map on vehicle
       if (map) {
-        map.setCenter({ lat: vehicle.lat, lng: vehicle.lng })
+        map.setCenter({ lat: vehicle.latitude, lng: vehicle.longitude })
         map.setZoom(16)
       }
       infoWindow?.close()
@@ -313,7 +315,7 @@ function MapComponent({
       const hydrant = event.detail
       // Center map on hydrant
       if (map) {
-        map.setCenter({ lat: hydrant.lat, lng: hydrant.lng })
+        map.setCenter({ lat: hydrant.latitude, lng: hydrant.longitude })
         map.setZoom(16)
       }
       infoWindow?.close()
@@ -323,7 +325,7 @@ function MapComponent({
       const incident = event.detail
       // Center map on incident
       if (map) {
-        map.setCenter({ lat: incident.lat, lng: incident.lng })
+        map.setCenter({ lat: incident.latitude, lng: incident.longitude })
         map.setZoom(16)
       }
       infoWindow?.close()

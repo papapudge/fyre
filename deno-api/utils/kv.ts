@@ -1,7 +1,61 @@
-import { DenoKV } from "https://deno.land/x/deno_kv@v0.0.1/mod.ts";
+// Initialize Deno KV - using the built-in Deno KV
+let kv: Deno.Kv;
 
-// Initialize Deno KV
-export const kv = new DenoKV();
+try {
+  kv = await Deno.openKv();
+} catch (error) {
+  console.warn("KV not available, using in-memory implementation");
+  // In-memory KV for local development
+  const memoryStore = new Map<string, any>();
+  
+  kv = {
+    get: async (key: Deno.KvKey) => {
+      const keyStr = JSON.stringify(key);
+      const value = memoryStore.get(keyStr);
+      return { value, versionstamp: value ? "memory" : null };
+    },
+    set: async (key: Deno.KvKey, value: any) => {
+      const keyStr = JSON.stringify(key);
+      memoryStore.set(keyStr, value);
+      return { ok: true, versionstamp: "memory" };
+    },
+    delete: async (key: Deno.KvKey) => {
+      const keyStr = JSON.stringify(key);
+      memoryStore.delete(keyStr);
+      return { ok: true, versionstamp: "memory" };
+    },
+    list: async function* (selector: Deno.KvListSelector) {
+      const prefix = JSON.stringify(selector.prefix);
+      console.log("🔍 List operation - looking for prefix:", prefix);
+      console.log("🔍 Memory store keys:", Array.from(memoryStore.keys()));
+      
+      for (const [key, value] of memoryStore.entries()) {
+        // Check if the key starts with the prefix
+        // For array keys like ["stations","id"], we need to check if it starts with ["stations",
+        const matches = key.startsWith(prefix + ',"') || key === prefix;
+        console.log("🔍 Checking key:", key, "against prefix:", prefix, "with comma quote:", prefix + ',"', "matches:", matches);
+        if (matches) {
+          yield { key: JSON.parse(key), value, versionstamp: "memory" };
+        }
+      }
+    },
+    atomic: () => ({
+      set: (key: Deno.KvKey, value: any) => {
+        const keyStr = JSON.stringify(key);
+        memoryStore.set(keyStr, value);
+        return { ok: true, versionstamp: "memory" };
+      },
+      delete: (key: Deno.KvKey) => {
+        const keyStr = JSON.stringify(key);
+        memoryStore.delete(keyStr);
+        return { ok: true, versionstamp: "memory" };
+      },
+      commit: async () => ({ ok: true, versionstamp: "memory" })
+    })
+  } as any;
+}
+
+export { kv };
 
 // Helper functions for KV operations
 export class KVStore {

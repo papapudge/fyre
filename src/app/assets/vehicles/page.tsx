@@ -1,6 +1,5 @@
 "use client"
 
-import { Layout } from "@/components/layout/layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,7 +17,7 @@ import {
   Settings,
   Eye
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AddVehicleDialog } from "@/components/vehicles/add-vehicle-dialog"
 
 // Mock vehicle data
@@ -116,13 +115,36 @@ const mockVehicles = [
 ]
 
 export default function VehiclesPage() {
-  const [vehicles, setVehicles] = useState(mockVehicles)
+  const [vehicles, setVehicles] = useState([])
   const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null)
   const [filter, setFilter] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Load vehicles from localStorage
+    if (typeof window !== 'undefined') {
+      const savedVehicles = localStorage.getItem('vehicles')
+      if (savedVehicles) {
+        try {
+          const parsedVehicles = JSON.parse(savedVehicles)
+          setVehicles(parsedVehicles)
+        } catch (error) {
+          console.error('Error parsing vehicles from localStorage:', error)
+        }
+      }
+      setLoading(false)
+    }
+  }, [])
 
   const handleVehicleAdded = (newVehicle: any) => {
-    setVehicles(prev => [...prev, newVehicle])
+    const updatedVehicles = [...vehicles, newVehicle]
+    setVehicles(updatedVehicles)
+    
+    // Save to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('vehicles', JSON.stringify(updatedVehicles))
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -170,12 +192,11 @@ export default function VehiclesPage() {
   })
 
   return (
-    <Layout>
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Vehicles</h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-red-600 to-orange-500 bg-clip-text text-transparent">Vehicles</h1>
             <p className="text-gray-600">Fire department apparatus and vehicles</p>
           </div>
           <div className="flex items-center space-x-3">
@@ -223,12 +244,13 @@ export default function VehiclesPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Vehicles List */}
           <div className="lg:col-span-2 space-y-4">
-            {filteredVehicles.map((vehicle) => (
-              <Card 
+            {filteredVehicles.length > 0 ? (
+              filteredVehicles.map((vehicle: any) => (
+                <Card 
                 key={vehicle.id} 
-                className={`cursor-pointer transition-colors ${
+                className={
                   selectedVehicle === vehicle.id ? "ring-2 ring-red-500" : ""
-                }`}
+                }
                 onClick={() => setSelectedVehicle(vehicle.id)}
               >
                 <CardHeader className="pb-3">
@@ -281,7 +303,13 @@ export default function VehiclesPage() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Truck className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>No vehicles found</p>
+              </div>
+            )}
           </div>
 
           {/* Vehicle Details */}
@@ -462,6 +490,5 @@ export default function VehiclesPage() {
           </div>
         </div>
       </div>
-    </Layout>
   )
 }

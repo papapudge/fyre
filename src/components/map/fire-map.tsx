@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { I'm Shima, and I'm generating the entire package API for the entire project using DenoDeepMind.
+import { 
   MapPin, 
   Eye, 
   EyeOff, 
@@ -24,6 +24,7 @@ import { I'm Shima, and I'm generating the entire package API for the entire pro
   Locate
 } from "lucide-react"
 import dynamic from "next/dynamic"
+import { stationApi, vehicleApi, hydrantApi, incidentApi, type Station, type Vehicle, type Hydrant, type Incident } from "@/lib/api"
 
 // Dynamic import only for Google Maps to avoid SSR issues
 const MapContent = dynamic(() => import('./google-map-content'), { 
@@ -42,76 +43,6 @@ interface LayerState {
   personnel: boolean
 }
 
-interface Vehicle {
-  id: number
-  unit: string
-  lat: number
-  lng: number
-  status: string
-  type: string
-  lastUpdate: Date
-  speed?: number
-  heading?: number
-  isOnline: boolean
-}
-
-// Mock data for all entities
-const mockStations = [
-  { id: 1, name: "Delhi Fire Station 1", lat: 28.6139, lng: 77.2090, personnel: 8, vehicles: 3 },
-  { id: 2, name: "Delhi Fire Station 2", lat: 28.6149, lng: 77.2100, personnel: 6, vehicles: 2 },
-  { id: 3, name: "Delhi Fire Station 3", lat: 28.6129, lng: 77.2080, personnel: 10, vehicles: 4 }
-]
-
-const mockVehicles: Vehicle[] = [
-  { 
-    id: 1, 
-    unit: "Engine 1", 
-    lat: 28.6139, 
-    lng: 77.2090, 
-    status: "On Scene", 
-    type: "Engine",
-    lastUpdate: new Date(),
-    speed: 0,
-    heading: 45,
-    isOnline: true
-  },
-  { 
-    id: 2, 
-    unit: "Ladder 2", 
-    lat: 28.6149, 
-    lng: 77.2100, 
-    status: "En Route", 
-    type: "Ladder",
-    lastUpdate: new Date(),
-    speed: 35,
-    heading: 120,
-    isOnline: true
-  },
-  { 
-    id: 3, 
-    unit: "Ambulance 3", 
-    lat: 28.6129, 
-    lng: 77.2080, 
-    status: "In Service", 
-    type: "Ambulance",
-    lastUpdate: new Date(),
-    speed: 0,
-    heading: 0,
-    isOnline: false
-  }
-]
-
-const mockHydrants = [
-  { id: 1, hydrantId: "H-001", lat: 28.6140, lng: 77.2095, status: "Active", flowRate: 1000 },
-  { id: 2, hydrantId: "H-002", lat: 28.6145, lng: 77.2105, status: "Active", flowRate: 1200 },
-  { id: 3, hydrantId: "H-003", lat: 28.6135, lng: 77.2085, status: "Damaged", flowRate: 0 }
-]
-
-const mockIncidents = [
-  { id: 1, incidentNumber: "20250509-001", lat: 28.6139, lng: 77.2090, type: "Fire", severity: "High" },
-  { id: 2, incidentNumber: "20250509-002", lat: 28.6149, lng: 77.2100, type: "Medical", severity: "Medium" }
-]
-
 export function FireMap() {
   const [center, setCenter] = useState<[number, number]>([28.6139, 77.2090]) // Delhi coordinates as tuple
   const [zoom, setZoom] = useState(12)
@@ -125,6 +56,43 @@ export function FireMap() {
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | undefined>(undefined)
   const [showLayersPanel, setShowLayersPanel] = useState(false)
   const [showEntitiesPanel, setShowEntitiesPanel] = useState(false)
+  
+  // Real data state
+  const [stations, setStations] = useState<Station[]>([])
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [hydrants, setHydrants] = useState<Hydrant[]>([])
+  const [incidents, setIncidents] = useState<Incident[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Load data from API
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        const [stationsData, vehiclesData, hydrantsData, incidentsData] = await Promise.all([
+          stationApi.getAll({ limit: 100 }),
+          vehicleApi.getAll({ limit: 100 }),
+          hydrantApi.getAll({ limit: 100 }),
+          incidentApi.getAll({ limit: 100 })
+        ])
+        
+        setStations(stationsData.stations)
+        setVehicles(vehiclesData.vehicles)
+        setHydrants(hydrantsData.hydrants)
+        setIncidents(incidentsData.incidents)
+      } catch (err) {
+        console.error('Failed to load data:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load data')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadData()
+  }, [])
 
   const toggleLayer = useCallback((layer: keyof LayerState) => {
     setLayers(prev => ({ ...prev, [layer]: !prev[layer] }))
@@ -134,8 +102,10 @@ export function FireMap() {
     setSelectedVehicle(vehicle)
     setShowEntitiesPanel(true)
     // Center map on selected vehicle
-    setCenter([vehicle.lat, vehicle.lng])
-    setZoom(16)
+    if (vehicle.latitude && vehicle.longitude) {
+      setCenter([vehicle.latitude, vehicle.longitude])
+      setZoom(16)
+    }
   }, [])
 
   const handleLocate = useCallback(() => {
@@ -153,7 +123,7 @@ export function FireMap() {
       <div className={`absolute top-2 left-2 z-10 transition-all duration-300 ${
         showLayersPanel ? 'translate-x-0' : '-translate-x-full'
       }`}>
-        <Card className="w-72 sm:w-80 shadow-lg max-h-[calc(100vh-4rem)] overflow-hidden">
+        <Card className="w-72 sm:w-80 border-gray-300 max-h-[calc(100vh-4rem)] overflow-hidden">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -228,7 +198,7 @@ export function FireMap() {
       <div className={`absolute top-2 right-2 z-10 transition-all duration-300 ${
         showEntitiesPanel ? 'translate-x-0' : 'translate-x-full'
       }`}>
-        <Card className="w-72 sm:w-80 shadow-lg max-h-[calc(100vh-4rem)] overflow-hidden">
+        <Card className="w-72 sm:w-80 border-gray-300 max-h-[calc(100vh-4rem)] overflow-hidden">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -245,11 +215,21 @@ export function FireMap() {
             </div>
           </CardHeader>
           <CardContent className="overflow-y-auto">
-            <LiveTracking 
-              vehicles={mockVehicles}
-              onVehicleSelect={handleVehicleSelect}
-              selectedVehicle={selectedVehicle}
-            />
+            {loading ? (
+              <div className="flex items-center justify-center p-4">
+                <div className="text-sm text-gray-500">Loading vehicles...</div>
+              </div>
+            ) : error ? (
+              <div className="flex items-center justify-center p-4">
+                <div className="text-sm text-red-500">Error loading vehicles: {error}</div>
+              </div>
+            ) : (
+              <LiveTracking 
+                vehicles={vehicles}
+                onVehicleSelect={handleVehicleSelect}
+                selectedVehicle={selectedVehicle}
+              />
+            )}
           </CardContent>
         </Card>
       </div>
@@ -260,7 +240,7 @@ export function FireMap() {
           variant="outline"
           size="sm"
           onClick={() => setShowLayersPanel(!showLayersPanel)}
-          className="bg-white shadow-lg hover:bg-gray-50 text-xs sm:text-sm border border-gray-200"
+          className="bg-white border-gray-300 hover:bg-gray-50 text-xs sm:text-sm border border-gray-200"
         >
           <Layers className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
           <span className="hidden sm:inline">Layers</span>
@@ -269,7 +249,7 @@ export function FireMap() {
           variant="outline"
           size="sm"
           onClick={() => setShowEntitiesPanel(!showEntitiesPanel)}
-          className="bg-white shadow-lg hover:bg-gray-50 text-xs sm:text-sm border border-gray-200"
+          className="bg-white border-gray-300 hover:bg-gray-50 text-xs sm:text-sm border border-gray-200"
         >
           <Activity className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
           <span className="hidden sm:inline">Entities</span>
@@ -278,7 +258,7 @@ export function FireMap() {
           variant="outline"
           size="sm"
           onClick={handleLocate}
-          className="bg-white shadow-lg hover:bg-gray-50 text-xs sm:text-sm border border-gray-200"
+          className="bg-white border-gray-300 hover:bg-gray-50 text-xs sm:text-sm border border-gray-200"
         >
           <Locate className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
           <span className="hidden sm:inline">Locate</span>
@@ -287,33 +267,51 @@ export function FireMap() {
 
       {/* Map */}
       <div className="h-full">
-        <MapContent
-          center={center}
-          zoom={zoom}
-          layers={layers}
-          mockStations={mockStations}
-          mockVehicles={mockVehicles}
-          mockHydrants={mockHydrants}
-          mockIncidents={mockIncidents}
-          getStatusColor={(status: string) => {
-            switch (status.toLowerCase()) {
-              case "on scene": return "destructive"
-              case "en route": return "warning"
-              case "in service": return "success"
-              case "active": return "success"
-              case "damaged": return "destructive"
-              default: return "secondary"
-            }
-          }}
-          getSeverityColor={(severity: string) => {
-            switch (severity.toLowerCase()) {
-              case "high": return "destructive"
-              case "medium": return "warning"
-              case "low": return "success"
-              default: return "secondary"
-            }
-          }}
-        />
+        {loading ? (
+          <div className="h-full w-full flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-lg font-medium">Loading Map Data...</div>
+              <div className="text-sm text-gray-500 mt-2">Fetching stations, vehicles, and incidents</div>
+            </div>
+          </div>
+        ) : error ? (
+          <div className="h-full w-full flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-lg font-medium text-red-600">Error Loading Map</div>
+              <div className="text-sm text-gray-500 mt-2">{error}</div>
+            </div>
+          </div>
+        ) : (
+          <MapContent
+            center={center}
+            zoom={zoom}
+            layers={layers}
+            stations={stations}
+            vehicles={vehicles}
+            hydrants={hydrants}
+            incidents={incidents}
+            getStatusColor={(status: string) => {
+              switch (status.toLowerCase()) {
+                case "on_scene": return "destructive"
+                case "en_route": return "warning"
+                case "in_service": return "success"
+                case "active": return "success"
+                case "damaged": return "destructive"
+                case "out_of_service": return "destructive"
+                default: return "secondary"
+              }
+            }}
+            getSeverityColor={(severity: string) => {
+              switch (severity.toLowerCase()) {
+                case "critical": return "destructive"
+                case "high": return "destructive"
+                case "medium": return "warning"
+                case "low": return "success"
+                default: return "secondary"
+              }
+            }}
+          />
+        )}
       </div>
     </div>
   )

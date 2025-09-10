@@ -33,16 +33,16 @@ function ClientTime({ date }: { date: Date }) {
 }
 
 interface Vehicle {
-  id: number
-  unit: string
-  lat: number
-  lng: number
+  id: string
+  name: string
+  latitude?: number
+  longitude?: number
   status: string
   type: string
-  lastUpdate: Date
+  lastLocationUpdate?: string
   speed?: number
   heading?: number
-  isOnline: boolean
+  isOnline?: boolean
 }
 
 interface LiveTrackingProps {
@@ -181,7 +181,7 @@ export function LiveTracking({ vehicles, onVehicleSelect, selectedVehicle }: Liv
                   <div className="flex items-center gap-2">
                     <span className="text-lg">{getVehicleIcon(vehicle.type)}</span>
                     <div>
-                      <div className="font-medium text-sm">{vehicle.unit}</div>
+                      <div className="font-medium text-sm">{vehicle.name}</div>
                       <div className="text-xs text-gray-500">{vehicle.type}</div>
                     </div>
                   </div>
@@ -190,12 +190,12 @@ export function LiveTracking({ vehicles, onVehicleSelect, selectedVehicle }: Liv
                       {vehicle.status}
                     </Badge>
                     <div className="flex items-center gap-1 mt-1">
-                      {vehicle.isOnline ? (
+                      {vehicle.isOnline !== false ? (
                         <Wifi className="h-3 w-3 text-green-500" />
                       ) : (
                         <WifiOff className="h-3 w-3 text-gray-400" />
                       )}
-                      <ClientTime date={vehicle.lastUpdate} />
+                      <ClientTime date={vehicle.lastLocationUpdate ? new Date(vehicle.lastLocationUpdate) : new Date()} />
                     </div>
                   </div>
                 </div>

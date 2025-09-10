@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -21,7 +22,7 @@ import {
 } from "lucide-react"
 import { NotificationBell } from "@/components/notifications/notification-bell"
 import { useState } from "react"
-import { useScrollBehavior } from "@/hooks/use-scroll-behavior"
+import { useRouter } from "next/navigation"
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
@@ -39,7 +40,26 @@ const navigation = [
 export function Sidebar() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
-  const scrollState = useScrollBehavior()
+  const router = useRouter()
+
+  const handleLogout = () => {
+    // Clear any stored authentication data
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('userData')
+    sessionStorage.clear()
+    
+    // Clear any cached data
+    if (typeof window !== 'undefined') {
+      // Clear all local storage
+      localStorage.clear()
+    }
+    
+    // Redirect to login page (or home page for now)
+    router.push('/')
+    
+    // Reload the page to clear any cached state
+    window.location.reload()
+  }
 
   return (
     <>
@@ -49,6 +69,7 @@ export function Sidebar() {
           variant="outline"
           size="icon"
           onClick={() => setIsOpen(!isOpen)}
+          className="bg-gray-900 border-gray-700 hover:bg-gray-800 text-white"
         >
           {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
         </Button>
@@ -57,27 +78,24 @@ export function Sidebar() {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-40 w-80 bg-white border-r border-gray-300 shadow-lg transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
-          isOpen ? "translate-x-0" : "-translate-x-full",
-          scrollState.isScrolling ? "shadow-xl" : "shadow-lg"
+          "fixed inset-y-0 left-0 z-40 w-80 bg-gray-900 border-r border-gray-700 lg:static lg:inset-0 overflow-hidden transition-transform duration-300",
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
-        style={{
-          // Subtle background change when scrolling
-          background: scrollState.isScrolling 
-            ? 'linear-gradient(180deg, #ffffff 0%, #fafafa 100%)'
-            : '#ffffff'
-        }}
       >
         <div className="flex flex-col h-full">
           {/* Logo & Station */}
-          <div className="px-4 border-b border-gray-200">
+          <div className="px-4">
             <div className="flex items-center space-x-3 py-6">
-              <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
                 <AlertTriangle className="h-5 w-5 text-white" />
               </div>
               <div className="flex-1">
-                <span className="text-xl font-bold text-gray-900">Fyre</span>
-                <p className="text-xs text-gray-600">Station 1 - Central</p>
+                <span className="text-xl font-bold text-white">
+                  Fyre
+                </span>
+                <p className="text-xs text-gray-400">
+                  Station 1 - Central
+                </p>
               </div>
             </div>
           </div>
@@ -92,32 +110,32 @@ export function Sidebar() {
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                    "flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors duration-200",
                     isActive
-                      ? "bg-red-600 text-white shadow-md"
-                      : "text-gray-800 hover:bg-gray-200 hover:text-gray-900"
+                      ? "bg-red-600 text-white"
+                      : "text-gray-300 hover:bg-gray-800 hover:text-white"
                   )}
                   onClick={() => setIsOpen(false)}
                 >
                   <item.icon className="mr-3 h-5 w-5" />
-                  {item.name}
+                  <span>{item.name}</span>
                 </Link>
               )
             })}
           </nav>
 
           {/* User info */}
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 bg-gray-800/30">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                  <Users className="h-4 w-4 text-gray-600" />
+                <div className="w-10 h-10 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center">
+                  <Users className="h-4 w-4 text-gray-200" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium text-white truncate">
                     John Doe
                   </p>
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className="text-xs text-gray-400 truncate">
                     CC Operator
                   </p>
                 </div>
@@ -125,11 +143,9 @@ export function Sidebar() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  // Handle logout logic here
-                  alert('Logout functionality would be implemented here')
-                }}
-                className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                onClick={handleLogout}
+                className="text-gray-400 hover:text-white hover:bg-gray-700"
+                title="Logout"
               >
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -139,12 +155,18 @@ export function Sidebar() {
       </div>
 
       {/* Overlay for mobile */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black bg-opacity-50 lg:hidden"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-30 bg-black bg-opacity-50 lg:hidden"
+            onClick={() => setIsOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </>
   )
 }

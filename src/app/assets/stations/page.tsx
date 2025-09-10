@@ -1,6 +1,5 @@
 "use client"
 
-import { Layout } from "@/components/layout/layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -95,7 +94,7 @@ const mockStations = [
 ]
 
 export default function StationsPage() {
-  const [stations, setStations] = useState(mockStations)
+  const [stations, setStations] = useState([])
   const [selectedStation, setSelectedStation] = useState<string | null>(null)
   const [filter, setFilter] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
@@ -118,12 +117,11 @@ export default function StationsPage() {
   })
 
   return (
-    <Layout>
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Fire Stations</h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-red-600 to-orange-500 bg-clip-text text-transparent">Stations</h1>
             <p className="text-gray-700">Fire station management and overview</p>
           </div>
           <div className="flex items-center space-x-3">
@@ -174,12 +172,13 @@ export default function StationsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Stations List */}
           <div className="lg:col-span-2 space-y-4">
-            {filteredStations.map((station) => (
+            {filteredStations.length > 0 ? (
+              filteredStations.map((station) => (
               <Card 
                 key={station.id} 
-                className={`cursor-pointer transition-all hover:shadow-md ${
+                className={
                   selectedStation === station.id ? "ring-2 ring-red-500 shadow-md" : ""
-                }`}
+                }
                 onClick={() => setSelectedStation(station.id)}
               >
                 <CardHeader className="pb-3">
@@ -227,7 +226,13 @@ export default function StationsPage() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Building2 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>No stations found</p>
+              </div>
+            )}
           </div>
 
           {/* Station Details */}
@@ -351,6 +356,5 @@ export default function StationsPage() {
           </div>
         </div>
       </div>
-    </Layout>
   )
 }

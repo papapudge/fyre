@@ -1,6 +1,5 @@
 "use client"
 
-import { Layout } from "@/components/layout/layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -75,7 +74,7 @@ const mockHydrants = [
 ]
 
 export default function HydrantsPage() {
-  const [hydrants, setHydrants] = useState(mockHydrants)
+  const [hydrants, setHydrants] = useState([])
   const [selectedHydrant, setSelectedHydrant] = useState<string | null>(null)
   const [filter, setFilter] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
@@ -106,12 +105,11 @@ export default function HydrantsPage() {
   })
 
   return (
-    <Layout>
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Fire Hydrants</h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-red-600 to-orange-500 bg-clip-text text-transparent">Hydrants</h1>
             <p className="text-gray-700">Fire hydrant management and monitoring</p>
           </div>
           <div className="flex items-center space-x-3">
@@ -162,15 +160,16 @@ export default function HydrantsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Hydrants List */}
           <div className="lg:col-span-2 space-y-4">
-            {filteredHydrants.map((hydrant) => {
+            {filteredHydrants.length > 0 ? (
+              filteredHydrants.map((hydrant) => {
               const StatusIcon = getStatusIcon(hydrant.status)
               
               return (
                 <Card 
                   key={hydrant.id} 
-                  className={`cursor-pointer transition-all hover:shadow-md ${
+                  className={
                     selectedHydrant === hydrant.id ? "ring-2 ring-red-500 shadow-md" : ""
-                  }`}
+                  }
                   onClick={() => setSelectedHydrant(hydrant.id)}
                 >
                   <CardHeader className="pb-3">
@@ -214,7 +213,15 @@ export default function HydrantsPage() {
                   </CardContent>
                 </Card>
               )
-            })}
+              })
+            ) : (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center text-gray-500">
+                  <Gauge className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>No hydrants found</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Hydrant Details */}
@@ -312,6 +319,5 @@ export default function HydrantsPage() {
           </div>
         </div>
       </div>
-    </Layout>
   )
 }

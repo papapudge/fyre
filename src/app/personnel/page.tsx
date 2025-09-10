@@ -1,6 +1,5 @@
 "use client"
 
-import { Layout } from "@/components/layout/layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -21,7 +20,7 @@ import {
   Truck,
   Building2
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AddPersonnelDialog } from "@/components/personnel/add-personnel-dialog"
 
 // Mock data
@@ -119,13 +118,43 @@ const mockPersonnel = [
 ]
 
 export default function PersonnelPage() {
-  const [personnel, setPersonnel] = useState(mockPersonnel)
+  const [personnel, setPersonnel] = useState([])
   const [selectedPerson, setSelectedPerson] = useState<string | null>(null)
   const [filter, setFilter] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Load personnel from localStorage or use mock data
+    if (typeof window !== 'undefined') {
+      const savedPersonnel = localStorage.getItem('personnel')
+      if (savedPersonnel) {
+        try {
+          const parsedPersonnel = JSON.parse(savedPersonnel)
+          setPersonnel(parsedPersonnel)
+        } catch (error) {
+          console.error('Error parsing personnel from localStorage:', error)
+          // Fallback to mock data if localStorage is corrupted
+          setPersonnel(mockPersonnel)
+          localStorage.setItem('personnel', JSON.stringify(mockPersonnel))
+        }
+      } else {
+        // First time load - use mock data
+        setPersonnel(mockPersonnel)
+        localStorage.setItem('personnel', JSON.stringify(mockPersonnel))
+      }
+      setLoading(false)
+    }
+  }, [])
 
   const handlePersonnelAdded = (newPersonnel: any) => {
-    setPersonnel(prev => [...prev, newPersonnel])
+    const updatedPersonnel = [...personnel, newPersonnel]
+    setPersonnel(updatedPersonnel)
+    
+    // Save to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('personnel', JSON.stringify(updatedPersonnel))
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -157,12 +186,11 @@ export default function PersonnelPage() {
   })
 
   return (
-    <Layout>
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Personnel</h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-red-600 to-orange-500 bg-clip-text text-transparent">Personnel</h1>
             <p className="text-gray-600">Fire department personnel management</p>
           </div>
           <div className="flex items-center space-x-3">
@@ -210,12 +238,13 @@ export default function PersonnelPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Personnel List */}
           <div className="lg:col-span-2 space-y-4">
-            {filteredPersonnel.map((person) => (
+            {filteredPersonnel.length > 0 ? (
+              filteredPersonnel.map((person: any) => (
               <Card 
                 key={person.id} 
-                className={`cursor-pointer transition-colors ${
+                className={
                   selectedPerson === person.id ? "ring-2 ring-red-500" : ""
-                }`}
+                }
                 onClick={() => setSelectedPerson(person.id)}
               >
                 <CardHeader className="pb-3">
@@ -273,14 +302,20 @@ export default function PersonnelPage() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>No personnel found</p>
+              </div>
+            )}
           </div>
 
           {/* Personnel Details */}
           <div className="space-y-4">
             {selectedPerson ? (
               (() => {
-                const person = personnel.find(p => p.id === selectedPerson)
+                const person = personnel.find((p: any) => p.id === selectedPerson)
                 if (!person) return null
                 
                 return (
@@ -440,6 +475,5 @@ export default function PersonnelPage() {
           </div>
         </div>
       </div>
-    </Layout>
   )
 }

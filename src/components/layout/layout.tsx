@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { motion } from "framer-motion"
 import { Sidebar } from "./sidebar"
 import { useScrollBehavior } from "@/hooks/use-scroll-behavior"
+import { PageTransition } from "@/components/animations/page-transition"
 
 interface LayoutProps {
   children: React.ReactNode
@@ -27,15 +29,21 @@ export function Layout({ children }: LayoutProps) {
             : '#f9fafb'
         }}
       >
-        <div 
-          className={`h-full transition-all duration-300 ${
-            scrollState.isScrolling 
-              ? 'transform scale-[0.998]' 
-              : 'transform scale-100'
-          }`}
+        <motion.div 
+          className="h-full"
+          animate={{
+            scale: scrollState.isScrolling ? 0.998 : 1,
+          }}
+          transition={{ 
+            type: "spring",
+            stiffness: 400,
+            damping: 30,
+          }}
         >
-          {children}
-        </div>
+          <PageTransition>
+            {children}
+          </PageTransition>
+        </motion.div>
       </main>
       
       {/* Enhanced scroll indicator with progress */}
@@ -68,14 +76,25 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Floating action button that appears when scrolling */}
       {scrollState.isScrolling && scrollState.scrollY > 200 && (
-        <button
+        <motion.button
+          initial={{ opacity: 0, scale: 0, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0, y: 20 }}
+          whileHover={{ scale: 1.1, y: -2 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
+          className="fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-colors duration-200"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <motion.svg 
+            className="w-5 h-5" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+            whileHover={{ y: -1 }}
+          >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-          </svg>
-        </button>
+          </motion.svg>
+        </motion.button>
       )}
     </div>
   )

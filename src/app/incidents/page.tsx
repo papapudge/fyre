@@ -1,6 +1,5 @@
 "use client"
 
-import { Layout } from "@/components/layout/layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,74 +17,60 @@ import {
   Camera,
   Navigation
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { NewIncidentDialog } from "@/components/incidents/new-incident-dialog"
-import { IncidentLogDialog } from "@/components/incidents/incident-log-dialog"
 
-// Mock data
+// Mock incidents data
 const mockIncidents = [
   {
-    id: "20250509-001",
-    type: "Fire",
-    severity: "High",
-    status: "On Scene",
+    id: "1",
     title: "Structure Fire - Residential",
+    type: "Structure Fire",
     location: "123 Main St, Downtown",
-    reportedAt: "2025-05-09T14:30:00Z",
-    dispatchedAt: "2025-05-09T14:32:00Z",
-    arrivedAt: "2025-05-09T14:38:00Z",
-    units: ["Engine 1", "Ladder 2", "Ambulance 3"],
-    personnel: ["John Smith", "Sarah Johnson", "Mike Davis"],
-    caller: "John Doe",
-    callerPhone: "(555) 123-4567",
-    description: "Reported structure fire in residential building. Heavy smoke visible from second floor.",
-    injuries: 0,
-    fatalities: 0,
-    estimatedLoss: 150000
+    status: "On Scene",
+    severity: "High",
+    reportedTime: "2025-09-10T14:30:00Z",
+    units: ["Engine 1", "Ladder 2", "Rescue 1"],
+    personnel: ["John Smith", "Mike Davis", "Sarah Johnson", "Tom Brown"],
+    description: "Multi-story residential building fire with possible occupants trapped"
   },
   {
-    id: "20250509-002",
+    id: "2", 
+    title: "Medical Emergency - Cardiac Arrest",
     type: "Medical",
-    severity: "Medium",
+    location: "456 Oak Ave, Uptown",
     status: "En Route",
-    title: "Medical Emergency - Cardiac",
-    location: "456 Oak Ave, Midtown",
-    reportedAt: "2025-05-09T14:45:00Z",
-    dispatchedAt: "2025-05-09T14:46:00Z",
-    arrivedAt: null,
-    units: ["Ambulance 3"],
-    personnel: ["Lisa Wilson"],
-    caller: "Jane Smith",
-    callerPhone: "(555) 987-6543",
-    description: "65-year-old male experiencing chest pain and shortness of breath.",
-    injuries: 1,
-    fatalities: 0,
-    estimatedLoss: 0
+    severity: "Critical",
+    reportedTime: "2025-09-10T15:15:00Z",
+    units: ["Ambulance 3", "Engine 2"],
+    personnel: ["Lisa Wilson", "Amy Green"],
+    description: "Adult male cardiac arrest, CPR in progress"
   },
   {
-    id: "20250509-003",
-    type: "Rescue",
-    severity: "Critical",
+    id: "3",
+    title: "Vehicle Accident - Multi-car",
+    type: "Vehicle Accident", 
+    location: "Highway 101 & Pine Rd",
     status: "Dispatched",
-    title: "Vehicle Accident - Entrapment",
-    location: "789 Pine Rd, Highway 101",
-    reportedAt: "2025-05-09T15:00:00Z",
-    dispatchedAt: "2025-05-09T15:01:00Z",
-    arrivedAt: null,
-    units: ["Rescue 1", "Engine 2", "Ambulance 1"],
-    personnel: ["Tom Brown", "Amy Green", "Chris White"],
-    caller: "Dispatch",
-    callerPhone: "911",
-    description: "Two-vehicle accident with reported entrapment. Jaws of life required.",
-    injuries: 2,
-    fatalities: 0,
-    estimatedLoss: 50000
+    severity: "Medium",
+    reportedTime: "2025-09-10T15:45:00Z",
+    units: ["Engine 1", "Rescue 1", "Ambulance 2"],
+    personnel: ["Chris White", "Mike Davis"],
+    description: "Three-vehicle collision with injuries reported"
   }
 ]
 
 export default function IncidentsPage() {
   const [selectedIncident, setSelectedIncident] = useState<string | null>(null)
   const [filter, setFilter] = useState("all")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [incidents, setIncidents] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // TODO: Fetch real data from API
+    setLoading(false)
+  }, [])
 
   const getSeverityColor = (severity: string) => {
     switch (severity.toLowerCase()) {
@@ -125,20 +110,20 @@ export default function IncidentsPage() {
     })
   }
 
-  const filteredIncidents = mockIncidents.filter(incident => {
-    if (filter === "all") return true
-    // Convert status to match filter format
-    const statusKey = incident.status.toLowerCase().replace(" ", "_")
-    return statusKey === filter
+  const filteredIncidents = incidents.filter((incident: any) => {
+    const matchesFilter = filter === "all" || incident.status.toLowerCase().replace(" ", "_") === filter
+    const matchesSearch = incident.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         incident.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         incident.location.toLowerCase().includes(searchTerm.toLowerCase())
+    return matchesFilter && matchesSearch
   })
 
   return (
-    <Layout>
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Incidents</h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-red-600 to-orange-500 bg-clip-text text-transparent">Incidents</h1>
             <p className="text-gray-600">Emergency response management</p>
           </div>
           <div className="flex items-center space-x-3">
@@ -172,15 +157,32 @@ export default function IncidentsPage() {
           ))}
         </div>
 
+        {/* Search and Filter */}
+        <div className="flex items-center space-x-4">
+          <div className="flex-1 max-w-md">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search incidents..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Incidents List */}
           <div className="lg:col-span-2 space-y-4">
-            {filteredIncidents.map((incident) => (
+            {filteredIncidents.length > 0 ? (
+              filteredIncidents.map((incident: any) => (
               <Card 
                 key={incident.id} 
-                className={`cursor-pointer transition-colors ${
+                className={
                   selectedIncident === incident.id ? "ring-2 ring-red-500" : ""
-                }`}
+                }
                 onClick={() => setSelectedIncident(incident.id)}
               >
                 <CardHeader className="pb-3">
@@ -231,14 +233,22 @@ export default function IncidentsPage() {
                   )}
                 </CardContent>
               </Card>
-            ))}
+              ))
+            ) : (
+              <Card>
+                <CardContent className="text-center py-8 text-gray-500">
+                  <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>No incidents found</p>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Incident Details */}
           <div className="space-y-4">
             {selectedIncident ? (
               (() => {
-                const incident = mockIncidents.find(i => i.id === selectedIncident)
+                const incident = incidents.find((i: any) => i.id === selectedIncident)
                 if (!incident) return null
                 
                 return (
@@ -415,6 +425,5 @@ export default function IncidentsPage() {
           </div>
         </div>
       </div>
-    </Layout>
   )
 }

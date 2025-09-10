@@ -1,6 +1,5 @@
 "use client"
 
-import { Layout } from "@/components/layout/layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,80 +15,35 @@ import {
   MapPin,
   Phone
 } from "lucide-react"
-import { useState } from "react"
-
-// Mock notifications data
-const mockNotifications = [
-  {
-    id: "1",
-    type: "INCIDENT_DISPATCH",
-    title: "New Incident Dispatch",
-    message: "Structure fire reported at 123 Main St. Engine 1 and Ladder 2 dispatched.",
-    timestamp: "2025-05-09T15:30:00Z",
-    isRead: false,
-    priority: "high",
-    data: {
-      incidentId: "20250509-001",
-      location: "123 Main St",
-      units: ["Engine 1", "Ladder 2"]
-    }
-  },
-  {
-    id: "2",
-    type: "ASSIGNMENT",
-    title: "Assignment Update",
-    message: "You have been assigned to Engine 1 for incident 20250509-001.",
-    timestamp: "2025-05-09T15:32:00Z",
-    isRead: false,
-    priority: "medium",
-    data: {
-      incidentId: "20250509-001",
-      assignment: "Engine 1 - Firefighter"
-    }
-  },
-  {
-    id: "3",
-    type: "MAINTENANCE_REMINDER",
-    title: "Vehicle Maintenance Due",
-    message: "Engine 3 is due for routine maintenance. Schedule service appointment.",
-    timestamp: "2025-05-09T14:00:00Z",
-    isRead: true,
-    priority: "low",
-    data: {
-      vehicleId: "Engine 3",
-      maintenanceType: "Routine"
-    }
-  },
-  {
-    id: "4",
-    type: "SYSTEM_ALERT",
-    title: "System Maintenance",
-    message: "Scheduled system maintenance will occur tonight from 2-4 AM.",
-    timestamp: "2025-05-09T10:00:00Z",
-    isRead: true,
-    priority: "medium",
-    data: {
-      maintenanceWindow: "2-4 AM"
-    }
-  },
-  {
-    id: "5",
-    type: "INCIDENT_UPDATE",
-    title: "Incident Status Update",
-    message: "Incident 20250509-002 has been upgraded to HIGH priority.",
-    timestamp: "2025-05-09T14:45:00Z",
-    isRead: false,
-    priority: "high",
-    data: {
-      incidentId: "20250509-002",
-      newPriority: "HIGH"
-    }
-  }
-]
+import { useState, useEffect } from "react"
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(mockNotifications)
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState("all")
+
+  useEffect(() => {
+    const loadNotifications = () => {
+      try {
+        // Load notifications from localStorage
+        const savedNotifications = localStorage.getItem('notifications')
+        if (savedNotifications) {
+          const parsedNotifications = JSON.parse(savedNotifications)
+          setNotifications(parsedNotifications)
+        } else {
+          // Initialize with empty array if no notifications exist
+          setNotifications([])
+        }
+      } catch (error) {
+        console.error('Error loading notifications:', error)
+        setNotifications([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadNotifications()
+  }, [])
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -121,23 +75,37 @@ export default function NotificationsPage() {
   }
 
   const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id 
-          ? { ...notification, isRead: true }
-          : notification
-      )
+    const updatedNotifications = notifications.map(notification => 
+      notification.id === id 
+        ? { ...notification, isRead: true }
+        : notification
     )
+    setNotifications(updatedNotifications)
+    
+    // Save to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('notifications', JSON.stringify(updatedNotifications))
+    }
   }
 
   const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notification => ({ ...notification, isRead: true }))
-    )
+    const updatedNotifications = notifications.map(notification => ({ ...notification, isRead: true }))
+    setNotifications(updatedNotifications)
+    
+    // Save to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('notifications', JSON.stringify(updatedNotifications))
+    }
   }
 
   const deleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(notification => notification.id !== id))
+    const updatedNotifications = notifications.filter(notification => notification.id !== id)
+    setNotifications(updatedNotifications)
+    
+    // Save to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('notifications', JSON.stringify(updatedNotifications))
+    }
   }
 
   const filteredNotifications = notifications.filter(notification => {
@@ -148,13 +116,60 @@ export default function NotificationsPage() {
 
   const unreadCount = notifications.filter(n => !n.isRead).length
 
-  return (
-    <Layout>
+  if (loading) {
+    return (
       <div className="p-6 space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-10 w-48 bg-gray-200 rounded animate-pulse" />
+            <div className="h-6 w-64 bg-gray-200 rounded animate-pulse" />
+          </div>
+          <div className="flex items-center space-x-3">
+            <div className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
+            <div className="h-8 w-24 bg-gray-200 rounded animate-pulse" />
+          </div>
+        </div>
+
+        {/* Filter Skeleton */}
+        <div className="flex items-center space-x-2">
+          <div className="h-6 w-12 bg-gray-200 rounded animate-pulse" />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-8 w-20 bg-gray-200 rounded animate-pulse" />
+          ))}
+        </div>
+
+        {/* Notifications Skeleton */}
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="p-4 border rounded-lg">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start space-x-3 flex-1">
+                  <div className="w-5 h-5 bg-gray-200 rounded animate-pulse" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-48 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-3 w-full bg-gray-200 rounded animate-pulse" />
+                    <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="h-8 w-8 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-8 w-8 bg-gray-200 rounded animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-red-600 to-orange-500 bg-clip-text text-transparent">Notifications</h1>
             <p className="text-gray-600">
               {unreadCount > 0 ? `${unreadCount} unread notifications` : "All caught up!"}
             </p>
@@ -292,15 +307,10 @@ export default function NotificationsPage() {
               </Card>
             ))
           ) : (
-            <Card>
-              <CardContent className="flex items-center justify-center h-64">
-                <div className="text-center text-gray-500">
-                  <Bell className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>No notifications found</p>
-                  <p className="text-sm">You're all caught up!</p>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="text-center py-8 text-gray-500">
+              <Bell className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <p>No notifications found</p>
+            </div>
           )}
         </div>
 
@@ -396,6 +406,5 @@ export default function NotificationsPage() {
           </CardContent>
         </Card>
       </div>
-    </Layout>
   )
 }

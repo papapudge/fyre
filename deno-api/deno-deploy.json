@@ -1,0 +1,23 @@
+{
+  "name": "fire-department-api",
+  "description": "Fire Department Resource Management Platform API",
+  "version": "1.0.0",
+  "main": "main.ts",
+  "permissions": {
+    "net": ["*"],
+    "env": ["*"],
+    "kv": ["*"]
+  },
+  "kv": {
+    "databases": [
+      {
+        "name": "fire_department_db",
+        "description": "Main database for fire department operations"
+      }
+    ]
+  },
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
+

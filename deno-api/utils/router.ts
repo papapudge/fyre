@@ -57,8 +57,12 @@ export class Router {
   }
 
   private matchPath(routePath: string, requestPath: string): boolean {
-    const routeParts = routePath.split('/');
-    const requestParts = requestPath.split('/');
+    // Normalize paths by removing trailing slashes
+    const normalizedRoutePath = routePath.replace(/\/$/, '') || '/';
+    const normalizedRequestPath = requestPath.replace(/\/$/, '') || '/';
+    
+    const routeParts = normalizedRoutePath.split('/');
+    const requestParts = normalizedRequestPath.split('/');
 
     if (routeParts.length !== requestParts.length) {
       return false;
