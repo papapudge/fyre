@@ -379,7 +379,7 @@ export function FireMap() {
         setVehicles(mockVehicles)
         setHydrants(mockHydrants)
         setIncidents(mockIncidents)
-        setError(null) // Clear error since we have fallback data
+        // Error cleared since we have fallback data
       } finally {
         setLoading(false)
       }

@@ -186,9 +186,9 @@ export default function PersonnelPage() {
 
   const filteredPersonnel = personnel.filter(person => {
     const matchesFilter = filter === "all" || person.status.toLowerCase().replace(" ", "_") === filter
-    const matchesSearch = person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         person.badgeNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         person.rank.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = person.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          person.rank?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          person.currentAssignment?.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesFilter && matchesSearch
   })
 
@@ -261,12 +261,12 @@ export default function PersonnelPage() {
                         <User className="h-6 w-6 text-gray-600" />
                       </div>
                       <div>
-                        <CardTitle className="text-lg">{person.name}</CardTitle>
-                        <CardDescription>{person.badgeNumber} • {person.rank}</CardDescription>
+                        <CardTitle className="text-lg">{person.employeeId}</CardTitle>
+                        <CardDescription>{person.employeeId} • {person.rank || 'No rank'}</CardDescription>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Badge variant={getRankColor(person.rank)}>
+                      <Badge variant={getRankColor(person.rank || '')}>
                         {person.rank}
                       </Badge>
                       <Badge variant={getStatusColor(person.status)}>
@@ -296,7 +296,7 @@ export default function PersonnelPage() {
                   </div>
                   
                   <div className="mt-3 flex flex-wrap gap-1">
-                    {person.certifications.slice(0, 3).map((cert, index) => (
+                    {person.certifications.slice(0, 3).map((cert: string, index: number) => (
                       <Badge key={index} variant="outline" className="text-xs">
                         {cert}
                       </Badge>
@@ -340,10 +340,9 @@ export default function PersonnelPage() {
                         <div className="grid grid-cols-2 gap-4">
                           {/* Left Column - Basic Info */}
                           <div className="text-sm space-y-1">
-                            <p><span className="font-medium">Name:</span> {person.name}</p>
-                            <p><span className="font-medium">Badge:</span> {person.badgeNumber}</p>
+                            <p><span className="font-medium">Employee ID:</span> {person.employeeId}</p>
                             <p><span className="font-medium">Rank:</span> 
-                              <Badge variant={getRankColor(person.rank)} className="ml-2">
+                              <Badge variant={getRankColor(person.rank || '')} className="ml-2">
                                 {person.rank}
                               </Badge>
                             </p>
@@ -352,19 +351,19 @@ export default function PersonnelPage() {
                                 {person.status}
                               </Badge>
                             </p>
-                            <p><span className="font-medium">Station:</span> {person.station}</p>
-                            <p><span className="font-medium">Hire Date:</span> {new Date(person.hireDate).toLocaleDateString()}</p>
+                            <p><span className="font-medium">Station:</span> {person.stationId || 'Not assigned'}</p>
+                            <p><span className="font-medium">Hire Date:</span> {person.hireDate ? new Date(person.hireDate).toLocaleDateString() : 'Not available'}</p>
                           </div>
                           
                           {/* Right Column - Profile Picture */}
                           <div className="flex justify-center items-start">
                             <Avatar className="h-24 w-24">
                               <AvatarImage 
-                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${person.name.replace(' ', '+')}`} 
-                                alt={person.name}
+                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${person.employeeId.replace(' ', '+')}`} 
+                                alt={person.employeeId}
                               />
                               <AvatarFallback className="text-lg">
-                                {person.name.split(' ').map(n => n[0]).join('')}
+                                {person.employeeId.substring(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                           </div>
@@ -377,11 +376,11 @@ export default function PersonnelPage() {
                         <div className="text-sm space-y-1">
                           <p className="flex items-center space-x-2">
                             <Phone className="h-4 w-4" />
-                            <span>{person.phone}</span>
+                            <span>{person.emergencyContact || 'Not available'}</span>
                           </p>
                           <p className="flex items-center space-x-2">
                             <Mail className="h-4 w-4" />
-                            <span>{person.email}</span>
+                            <span>Not available</span>
                           </p>
                         </div>
                       </div>
@@ -396,7 +395,7 @@ export default function PersonnelPage() {
                           </p>
                           <p className="flex items-center space-x-2 mt-1">
                             <MapPin className="h-4 w-4" />
-                            <span>{person.location}</span>
+                            <span>{person.currentAssignment || 'Not assigned'}</span>
                           </p>
                         </div>
                       </div>

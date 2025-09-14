@@ -42,9 +42,9 @@ export default function ReportsPage() {
         vehicles: { value: "0%", trend: "stable" }
       }
     },
-    incidentTypes: [],
-    monthlyData: [],
-    stationData: []
+    incidentTypes: [] as any[],
+    monthlyData: [] as any[],
+    stationData: [] as any[]
   })
   const [loading, setLoading] = useState(true)
 

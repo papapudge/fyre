@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useRealtimeData } from "@/hooks/use-realtime-data"
+import { type Vehicle } from "@/lib/api"
 import { 
   Navigation, 
   Clock, 
@@ -31,18 +32,7 @@ function ClientTime({ date }: { date: Date }) {
   return <span className="text-xs text-gray-500">{timeString}</span>
 }
 
-interface Vehicle {
-  id: string
-  name: string
-  latitude?: number
-  longitude?: number
-  status: string
-  type: string
-  lastLocationUpdate?: string
-  speed?: number
-  heading?: number
-  isOnline?: boolean
-}
+// Vehicle type is now imported from @/lib/api
 
 interface LiveTrackingProps {
   vehicles: Vehicle[]
@@ -64,7 +54,7 @@ export function LiveTracking({ vehicles, onVehicleSelect, selectedVehicle }: Liv
       setLastUpdate(new Date())
       
       // Count online vehicles
-      const online = vehicles.filter(v => v.isOnline).length
+      const online = vehicles.filter(v => v.isActive).length
       setOnlineVehicles(online)
     }, 5000) // Update every 5 seconds
 
@@ -195,7 +185,7 @@ export function LiveTracking({ vehicles, onVehicleSelect, selectedVehicle }: Liv
                       {vehicle.status}
                     </Badge>
                     <div className="flex items-center gap-1 mt-1">
-                      {vehicle.isOnline !== false ? (
+                      {vehicle.isActive ? (
                         <Wifi className="h-3 w-3 text-green-500" />
                       ) : (
                         <WifiOff className="h-3 w-3 text-gray-400" />
@@ -205,12 +195,7 @@ export function LiveTracking({ vehicles, onVehicleSelect, selectedVehicle }: Liv
                   </div>
                 </div>
                 
-                {vehicle.speed && (
-                  <div className="mt-2 text-xs text-gray-600">
-                    Speed: {vehicle.speed} mph
-                    {vehicle.heading && ` • Heading: ${vehicle.heading}°`}
-                  </div>
-                )}
+                {/* Speed and heading not available in API Vehicle type */}
               </div>
             ))
           )}

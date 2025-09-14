@@ -36,14 +36,14 @@ export const AnimatedButton = forwardRef<HTMLButtonElement, AnimatedButtonProps>
       whileTap: pressEffect ? { scale: 0.95, transition: { duration: 0.1 } } : undefined,
       whileHover: hoverEffect ? { 
         scale: 1.02,
-        transition: { type: "spring", stiffness: 400, damping: 17 }
+        transition: { type: "spring" as const, stiffness: 400, damping: 17 }
       } : undefined,
       animate: pulseEffect ? {
         scale: [1, 1.02, 1],
         transition: {
           duration: 2,
           repeat: Infinity,
-          ease: "easeInOut",
+          ease: "easeInOut" as const,
         },
       } : undefined,
     }

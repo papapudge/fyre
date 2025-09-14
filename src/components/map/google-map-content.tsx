@@ -38,7 +38,7 @@ const render = (status: Status) => {
     case Status.FAILURE:
       return <div className="h-full w-full flex items-center justify-center text-red-500">Error loading map</div>
     default:
-      return null
+      return <div className="h-full w-full"></div>
   }
 }
 
@@ -56,16 +56,16 @@ function MapComponent({
   onToggleAdvancedFeatures
 }: MapContentProps) {
   const ref = useRef<HTMLDivElement>(null)
-  const [map, setMap] = useState<google.maps.Map>()
-  const [markers, setMarkers] = useState<google.maps.Marker[]>([])
-  const markersRef = useRef<google.maps.Marker[]>([])
-  const [infoWindow, setInfoWindow] = useState<google.maps.InfoWindow>()
+  const [map, setMap] = useState<any>()
+  const [markers, setMarkers] = useState<any[]>([])
+  const markersRef = useRef<any[]>([])
+  const [infoWindow, setInfoWindow] = useState<any>()
 
   // Create marker icons once when Google Maps is loaded
   const [markerIcons, setMarkerIcons] = useState<{[key: string]: any}>({})
 
   useEffect(() => {
-    if (window.google?.maps && Object.keys(markerIcons).length === 0) {
+    if ((window as any).google?.maps && Object.keys(markerIcons).length === 0) {
       const createMarkerIcon = (emoji: string, color: string = "#ffffff") => {
         return {
           url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
@@ -74,8 +74,8 @@ function MapComponent({
               <text x="20" y="26" text-anchor="middle" fill="white" font-size="16" font-family="Arial, sans-serif">${emoji}</text>
             </svg>
           `)}`,
-          scaledSize: new google.maps.Size(40, 40),
-          anchor: new google.maps.Point(20, 20)
+          scaledSize: new (window as any).google.maps.Size(40, 40),
+          anchor: new (window as any).google.maps.Point(20, 20)
         }
       }
 
@@ -95,20 +95,20 @@ function MapComponent({
 
   // Initialize map
   useEffect(() => {
-    if (ref.current && !map && window.google?.maps) {
-      const newMap = new google.maps.Map(ref.current, {
+    if (ref.current && !map && (window as any).google?.maps) {
+      const newMap = new (window as any).google.maps.Map(ref.current, {
         center: { lat: center[0], lng: center[1] },
         zoom: zoom,
-        mapTypeId: google.maps.MapTypeId.SATELLITE,
+        mapTypeId: (window as any).google.maps.MapTypeId.SATELLITE,
         mapTypeControl: true,
         mapTypeControlOptions: {
-          style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-          position: google.maps.ControlPosition.TOP_CENTER,
+          style: (window as any).google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+          position: (window as any).google.maps.ControlPosition.TOP_CENTER,
           mapTypeIds: [
-            google.maps.MapTypeId.SATELLITE,
-            google.maps.MapTypeId.ROADMAP,
-            google.maps.MapTypeId.HYBRID,
-            google.maps.MapTypeId.TERRAIN
+            (window as any).google.maps.MapTypeId.SATELLITE,
+            (window as any).google.maps.MapTypeId.ROADMAP,
+            (window as any).google.maps.MapTypeId.HYBRID,
+            (window as any).google.maps.MapTypeId.TERRAIN
           ]
         },
         styles: [
@@ -120,7 +120,7 @@ function MapComponent({
         ]
       })
       setMap(newMap)
-      setInfoWindow(new google.maps.InfoWindow())
+      setInfoWindow(new (window as any).google.maps.InfoWindow())
     }
   }, [ref, map, center, zoom])
 
@@ -141,18 +141,18 @@ function MapComponent({
 
   // Add markers based on layers
   useEffect(() => {
-    if (!map || !infoWindow || !window.google?.maps || Object.keys(markerIcons).length === 0) return
+    if (!map || !infoWindow || !(window as any).google?.maps || Object.keys(markerIcons).length === 0) return
 
     // Clear existing markers
     markersRef.current.forEach(marker => marker.setMap(null))
     markersRef.current = []
     
-    const newMarkers: google.maps.Marker[] = []
+    const newMarkers: any[] = []
 
     // Add station markers
     if (layers.stations && stations && Array.isArray(stations)) {
       stations.forEach((station) => {
-        const marker = new google.maps.Marker({
+        const marker = new (window as any).google.maps.Marker({
           position: { lat: station.latitude, lng: station.longitude },
           map: map,
           icon: markerIcons.station,
@@ -186,7 +186,7 @@ function MapComponent({
         const iconType = vehicle.type.toLowerCase() as keyof typeof markerIcons
         const icon = markerIcons[iconType] || markerIcons.engine
 
-        const marker = new google.maps.Marker({
+        const marker = new (window as any).google.maps.Marker({
           position: { lat: vehicle.latitude, lng: vehicle.longitude },
           map: map,
           icon: icon,
@@ -220,7 +220,7 @@ function MapComponent({
     // Add hydrant markers
     if (layers.hydrants && hydrants && Array.isArray(hydrants)) {
       hydrants.forEach((hydrant) => {
-        const marker = new google.maps.Marker({
+        const marker = new (window as any).google.maps.Marker({
           position: { lat: hydrant.latitude, lng: hydrant.longitude },
           map: map,
           icon: markerIcons.hydrant,
@@ -254,7 +254,7 @@ function MapComponent({
     // Add incident markers
     if (layers.incidents && incidents && Array.isArray(incidents)) {
       incidents.forEach((incident) => {
-        const marker = new google.maps.Marker({
+        const marker = new (window as any).google.maps.Marker({
           position: { lat: incident.latitude, lng: incident.longitude },
           map: map,
           icon: markerIcons.incident,

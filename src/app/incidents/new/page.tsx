@@ -216,6 +216,48 @@ export default function NewIncidentPage() {
     return `INC-${dateStr}-${timeStr}`
   }
 
+  // Map form type values to enum values
+  const mapFormTypeToEnum = (formType: string): "FIRE" | "MEDICAL" | "RESCUE" | "HAZMAT" | "OTHER" | "FALSE_ALARM" | "SERVICE_CALL" | "TRAINING" => {
+    const typeMap: Record<string, "FIRE" | "MEDICAL" | "RESCUE" | "HAZMAT" | "OTHER" | "FALSE_ALARM" | "SERVICE_CALL" | "TRAINING"> = {
+      "Fire": "FIRE",
+      "Medical Emergency": "MEDICAL",
+      "Rescue": "RESCUE",
+      "Hazmat": "HAZMAT",
+      "Building Collapse": "RESCUE",
+      "Road Accident": "RESCUE",
+      "Industrial Accident": "HAZMAT",
+      "Natural Disaster": "RESCUE",
+      "Bomb Threat": "OTHER",
+      "Other": "OTHER"
+    }
+    return typeMap[formType] || "OTHER"
+  }
+
+  // Map form severity values to enum values
+  const mapFormSeverityToEnum = (formSeverity: string): "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" => {
+    const severityMap: Record<string, "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"> = {
+      "Low": "LOW",
+      "Medium": "MEDIUM",
+      "High": "HIGH",
+      "Critical": "CRITICAL"
+    }
+    return severityMap[formSeverity] || "MEDIUM"
+  }
+
+  // Map form status values to enum values
+  const mapFormStatusToEnum = (formStatus: string): "DISPATCHED" | "EN_ROUTE" | "ON_SCENE" | "ACTIVE" | "CONTAINED" | "CLOSED" | "CANCELLED" => {
+    const statusMap: Record<string, "DISPATCHED" | "EN_ROUTE" | "ON_SCENE" | "ACTIVE" | "CONTAINED" | "CLOSED" | "CANCELLED"> = {
+      "Dispatched": "DISPATCHED",
+      "En Route": "EN_ROUTE",
+      "On Scene": "ON_SCENE",
+      "Active": "ACTIVE",
+      "Contained": "CONTAINED",
+      "Closed": "CLOSED",
+      "Cancelled": "CANCELLED"
+    }
+    return statusMap[formStatus] || "DISPATCHED"
+  }
+
   const handleSubmit = async () => {
     if (!validateStep(currentStep)) return
 
@@ -225,9 +267,9 @@ export default function NewIncidentPage() {
       const newIncident = {
         id: generateIncidentNumber(),
         incidentNumber: generateIncidentNumber(),
-        type: formData.type,
-        severity: formData.severity,
-        status: "Dispatched",
+        type: mapFormTypeToEnum(formData.type),
+        severity: mapFormSeverityToEnum(formData.severity),
+        status: mapFormStatusToEnum("Dispatched"),
         title: formData.title || `${formData.type} - ${formData.location}`,
         location: formData.location,
         city: formData.city,
@@ -239,7 +281,7 @@ export default function NewIncidentPage() {
         lng: 0, // Would be geocoded in real app
         reportedAt: new Date().toISOString(),
         dispatchedAt: new Date().toISOString(),
-        arrivedAt: null,
+        arrivedAt: undefined,
         units: formData.selectedUnits.map(id => availableUnits.find(u => u.id === id)?.name || id),
         personnel: formData.selectedPersonnel.map(id => availablePersonnel.find(p => p.id === id)?.name || id),
         caller: formData.callerName,

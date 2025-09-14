@@ -248,7 +248,7 @@ export default function IncidentsPage() {
           <div className="space-y-4">
             {selectedIncident ? (
               (() => {
-                const incident = incidents.find((i: any) => i.id === selectedIncident)
+                const incident = incidents.find((i: any) => i.id === selectedIncident) as any
                 if (!incident) return null
                 
                 return (
@@ -304,7 +304,7 @@ export default function IncidentsPage() {
                       <div className="space-y-2">
                         <h4 className="font-medium">Units Assigned</h4>
                         <div className="space-y-1">
-                          {incident.units.map((unit, index) => (
+                          {incident.units.map((unit: string, index: number) => (
                             <Badge key={index} variant="outline" className="mr-1">
                               {unit}
                             </Badge>
@@ -315,7 +315,7 @@ export default function IncidentsPage() {
                       <div className="space-y-2">
                         <h4 className="font-medium">Personnel</h4>
                         <div className="space-y-1">
-                          {incident.personnel.map((person, index) => (
+                          {incident.personnel.map((person: string, index: number) => (
                             <Badge key={index} variant="secondary" className="mr-1">
                               {person}
                             </Badge>

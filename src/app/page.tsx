@@ -33,9 +33,9 @@ export default function Dashboard() {
     personnelOnDuty: 0,
     vehiclesInService: 0,
     averageResponseTime: 0,
-    recentIncidents: [],
-    personnelStatus: [],
-    vehicleStatus: []
+    recentIncidents: [] as any[],
+    personnelStatus: [] as any[],
+    vehicleStatus: [] as any[]
   })
   const [loading, setLoading] = useState(true)
 

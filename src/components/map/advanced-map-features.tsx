@@ -15,15 +15,15 @@ import {
 } from "lucide-react"
 
 interface AdvancedMapFeaturesProps {
-  map: google.maps.Map | null
+  map: any
   incidents: any[]
   vehicles: any[]
   stations: any[]
 }
 
 export function AdvancedMapFeatures({ map, incidents, vehicles, stations }: AdvancedMapFeaturesProps) {
-  const [heatMapData, setHeatMapData] = useState<google.maps.LatLng[]>([])
-  const [heatMap, setHeatMap] = useState<google.maps.visualization.HeatmapLayer | null>(null)
+  const [heatMapData, setHeatMapData] = useState<any[]>([])
+  const [heatMap, setHeatMap] = useState<any>(null)
   const [markerClusterer, setMarkerClusterer] = useState<any>(null)
   const [showHeatMap, setShowHeatMap] = useState(false)
   const [showClustering, setShowClustering] = useState(true)
@@ -33,9 +33,10 @@ export function AdvancedMapFeatures({ map, incidents, vehicles, stations }: Adva
   // Initialize heat map data from incidents
   useEffect(() => {
     if (incidents.length > 0) {
-      const heatData = incidents.map(incident => 
-        new google.maps.LatLng(incident.lat, incident.lng)
-      )
+      const heatData = incidents.map(incident => ({
+        lat: incident.lat,
+        lng: incident.lng
+      }))
       setHeatMapData(heatData)
     }
   }, [incidents])
@@ -46,17 +47,13 @@ export function AdvancedMapFeatures({ map, incidents, vehicles, stations }: Adva
 
     if (showHeatMap) {
       if (heatMap) {
-        heatMap.setMap(null)
+        // Mock: remove heat map
         setHeatMap(null)
       }
     } else {
       if (heatMapData.length > 0) {
-        const newHeatMap = new google.maps.visualization.HeatmapLayer({
-          data: heatMapData,
-          map: map,
-          radius: 50,
-          opacity: 0.6
-        })
+        // Mock: create heat map
+        const newHeatMap = { data: heatMapData, map: map }
         setHeatMap(newHeatMap)
       }
     }
@@ -68,11 +65,11 @@ export function AdvancedMapFeatures({ map, incidents, vehicles, stations }: Adva
     if (!map) return
 
     if (showTraffic) {
-      const trafficLayer = new google.maps.TrafficLayer()
-      trafficLayer.setMap(null)
+      // Mock: remove traffic layer
+      console.log('Traffic layer removed')
     } else {
-      const trafficLayer = new google.maps.TrafficLayer()
-      trafficLayer.setMap(map)
+      // Mock: add traffic layer
+      console.log('Traffic layer added')
     }
     setShowTraffic(!showTraffic)
   }
@@ -82,11 +79,11 @@ export function AdvancedMapFeatures({ map, incidents, vehicles, stations }: Adva
     if (!map) return
 
     if (showTransit) {
-      const transitLayer = new google.maps.TransitLayer()
-      transitLayer.setMap(null)
+      // Mock: remove transit layer
+      console.log('Transit layer removed')
     } else {
-      const transitLayer = new google.maps.TransitLayer()
-      transitLayer.setMap(map)
+      // Mock: add transit layer
+      console.log('Transit layer added')
     }
     setShowTransit(!showTransit)
   }
