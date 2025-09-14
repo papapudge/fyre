@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { AddPersonnelDialog } from "@/components/personnel/add-personnel-dialog"
+import { personnelApi, type Personnel } from "@/lib/api"
 
 // Mock data
 const mockPersonnel = [
@@ -118,42 +119,48 @@ const mockPersonnel = [
 ]
 
 export default function PersonnelPage() {
-  const [personnel, setPersonnel] = useState([])
+  const [personnel, setPersonnel] = useState<Personnel[]>([])
   const [selectedPerson, setSelectedPerson] = useState<string | null>(null)
   const [filter, setFilter] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Load personnel from localStorage or use mock data
-    if (typeof window !== 'undefined') {
-      const savedPersonnel = localStorage.getItem('personnel')
-      if (savedPersonnel) {
-        try {
-          const parsedPersonnel = JSON.parse(savedPersonnel)
-          setPersonnel(parsedPersonnel)
-        } catch (error) {
-          console.error('Error parsing personnel from localStorage:', error)
-          // Fallback to mock data if localStorage is corrupted
-          setPersonnel(mockPersonnel)
-          localStorage.setItem('personnel', JSON.stringify(mockPersonnel))
-        }
-      } else {
-        // First time load - use mock data
-        setPersonnel(mockPersonnel)
-        localStorage.setItem('personnel', JSON.stringify(mockPersonnel))
+    const loadPersonnel = async () => {
+      try {
+        setLoading(true)
+        const response = await personnelApi.getAll({ limit: 100 })
+        setPersonnel(response.personnel)
+      } catch (error) {
+        console.error('Failed to load personnel:', error)
+        // Fallback to empty array on error
+        setPersonnel([])
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
+    
+    loadPersonnel()
   }, [])
 
-  const handlePersonnelAdded = (newPersonnel: any) => {
-    const updatedPersonnel = [...personnel, newPersonnel]
-    setPersonnel(updatedPersonnel)
-    
-    // Save to localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('personnel', JSON.stringify(updatedPersonnel))
+  const handlePersonnelAdded = async (newPersonnel: any) => {
+    try {
+      // Extract only the fields required by the API
+      const apiData = {
+        userId: newPersonnel.userId,
+        employeeId: newPersonnel.employeeId,
+        rank: newPersonnel.rank,
+        certifications: newPersonnel.certifications || [],
+        qualifications: newPersonnel.qualifications || [],
+        status: newPersonnel.status || "ON_DUTY",
+        trainingHours: newPersonnel.trainingHours || 0
+      }
+      
+      // Create personnel via API
+      const createdPersonnel = await personnelApi.create(apiData)
+      setPersonnel(prev => [...prev, createdPersonnel])
+    } catch (error) {
+      console.error('Failed to add personnel:', error)
     }
   }
 

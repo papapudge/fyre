@@ -235,7 +235,7 @@ export default function NotificationsPage() {
                             <Clock className="h-3 w-3" />
                             <span>{formatTime(notification.timestamp)}</span>
                           </div>
-                          {notification.data.location && (
+                          {notification.data?.location && (
                             <div className="flex items-center space-x-1">
                               <MapPin className="h-3 w-3" />
                               <span>{notification.data.location}</span>

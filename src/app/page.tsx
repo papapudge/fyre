@@ -22,6 +22,7 @@ import {
   ArrowRight
 } from "lucide-react"
 import { useState, useEffect } from "react"
+import { incidentApi, personnelApi, vehicleApi } from "@/lib/api"
 
 // Real data will come from API - no more mock data
 
@@ -39,22 +40,31 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const loadDashboardData = () => {
+    const loadDashboardData = async () => {
       try {
-        // Load data from localStorage
-        const incidents = JSON.parse(localStorage.getItem('incidents') || '[]')
-        const personnel = JSON.parse(localStorage.getItem('personnel') || '[]')
-        const vehicles = JSON.parse(localStorage.getItem('vehicles') || '[]')
+        setLoading(true)
+        
+        // Load data from API in parallel
+        const [incidentsRes, personnelRes, vehiclesRes] = await Promise.all([
+          incidentApi.getAll({ limit: 100 }),
+          personnelApi.getAll({ limit: 100 }),
+          vehicleApi.getAll({ limit: 100 })
+        ])
+        
+        const incidents = incidentsRes.incidents
+        const personnel = personnelRes.personnel  
+        const vehicles = vehiclesRes.vehicles
         
         const activeIncidents = incidents.filter((incident: any) => 
-          ['Dispatched', 'En Route', 'On Scene'].includes(incident.status)
+          ['ACTIVE', 'DISPATCHED', 'EN_ROUTE', 'ON_SCENE'].includes(incident.status)
         ).length
         
-        const personnelOnDuty = personnel.filter((p: any) => p.status === "On Duty").length
-        const vehiclesInService = vehicles.filter((v: any) => v.status === "In Service").length
+        const personnelOnDuty = personnel.filter((p: any) => p.status === "ON_DUTY").length
+        const vehiclesInService = vehicles.filter((v: any) => v.status === "IN_SERVICE").length
         
         const averageResponseTime = incidents.length > 0 
           ? Math.round(incidents.reduce((acc: number, incident: any) => {
+              if (!incident.reportedAt || !incident.dispatchedAt) return acc
               const reported = new Date(incident.reportedAt)
               const dispatched = new Date(incident.dispatchedAt)
               return acc + (dispatched.getTime() - reported.getTime()) / (1000 * 60)
@@ -73,7 +83,7 @@ export default function Dashboard() {
       } catch (error) {
         console.error('Error loading dashboard data:', error)
       } finally {
-    setLoading(false)
+        setLoading(false)
       }
     }
 
@@ -217,7 +227,7 @@ export default function Dashboard() {
       {/* Content Sections */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Active Incidents */}
-        <Card>
+        <Card data-testid="active-incidents">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <AlertTriangle className="h-5 w-5 text-red-600" />

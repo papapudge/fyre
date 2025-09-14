@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useRealtimeData } from "@/hooks/use-realtime-data"
+import { EnhancedEmptyState } from "@/components/ui/enhanced-empty-state"
 import { 
   MapPin, 
   Navigation, 
@@ -101,73 +101,79 @@ export function LiveTracking({ vehicles, onVehicleSelect, selectedVehicle }: Liv
   return (
     <div className="space-y-4">
       {/* Tracking Controls */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Navigation className="h-4 w-4" />
-            Live Tracking
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {isTracking ? (
-                <Wifi className="h-4 w-4 text-green-500" />
-              ) : (
-                <WifiOff className="h-4 w-4 text-gray-400" />
-              )}
-              <span className="text-sm">
-                {isTracking ? "Tracking Active" : "Tracking Paused"}
-              </span>
-            </div>
-            <Badge variant={isTracking ? "success" : "secondary"}>
-              {onlineVehicles} Online
-            </Badge>
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Navigation className="h-4 w-4 text-gray-600" />
+          <span className="text-sm font-medium text-gray-900">Live Tracking</span>
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {isTracking ? (
+              <Wifi className="h-4 w-4 text-green-500" />
+            ) : (
+              <WifiOff className="h-4 w-4 text-gray-400" />
+            )}
+            <span className="text-sm text-gray-700">
+              {isTracking ? "Tracking Active" : "Tracking Paused"}
+            </span>
           </div>
+          <Badge variant={isTracking ? "success" : "secondary"} className="text-xs">
+            {onlineVehicles} Online
+          </Badge>
+        </div>
 
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              onClick={toggleTracking}
-              variant={isTracking ? "destructive" : "default"}
-              className="flex-1"
-            >
-              {isTracking ? (
-                <>
-                  <Pause className="h-3 w-3 mr-1" />
-                  Pause
-                </>
-              ) : (
-                <>
-                  <Play className="h-3 w-3 mr-1" />
-                  Start
-                </>
-              )}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={resetTracking}
-            >
-              <RotateCcw className="h-3 w-3" />
-            </Button>
-          </div>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            onClick={toggleTracking}
+            variant={isTracking ? "destructive" : "default"}
+            className="flex-1"
+          >
+            {isTracking ? (
+              <>
+                <Pause className="h-3 w-3 mr-1" />
+                Pause
+              </>
+            ) : (
+              <>
+                <Play className="h-3 w-3 mr-1" />
+                Start
+              </>
+            )}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={resetTracking}
+          >
+            <RotateCcw className="h-3 w-3" />
+          </Button>
+        </div>
 
-          <div className="text-xs text-gray-500 flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            Last update: <ClientTime date={lastUpdate} />
-          </div>
-        </CardContent>
-      </Card>
+        <div className="text-xs text-gray-500 flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          Last update: <ClientTime date={lastUpdate} />
+        </div>
+      </div>
 
       {/* Vehicle List */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Active Vehicles</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            {vehicles.map((vehicle) => (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-900">Active Vehicles</span>
+        </div>
+        
+        <div className="space-y-2 max-h-64 overflow-y-auto">
+          {vehicles.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-gray-400 mb-2">
+                <Truck className="h-8 w-8 mx-auto" />
+              </div>
+              <p className="text-sm text-gray-500">No vehicles available</p>
+              <p className="text-xs text-gray-400 mt-1">Add vehicles to start tracking</p>
+            </div>
+          ) : (
+            vehicles.map((vehicle) => (
               <div
                 key={vehicle.id}
                 className={`p-3 border rounded-lg cursor-pointer transition-colors ${
@@ -207,10 +213,10 @@ export function LiveTracking({ vehicles, onVehicleSelect, selectedVehicle }: Liv
                   </div>
                 )}
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            ))
+          )}
+        </div>
+      </div>
     </div>
   )
 }

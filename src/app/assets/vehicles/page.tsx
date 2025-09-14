@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { AddVehicleDialog } from "@/components/vehicles/add-vehicle-dialog"
+import { vehicleApi, type Vehicle } from "@/lib/api"
 
 // Mock vehicle data
 const mockVehicles = [
@@ -115,35 +116,35 @@ const mockVehicles = [
 ]
 
 export default function VehiclesPage() {
-  const [vehicles, setVehicles] = useState([])
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null)
   const [filter, setFilter] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Load vehicles from localStorage
-    if (typeof window !== 'undefined') {
-      const savedVehicles = localStorage.getItem('vehicles')
-      if (savedVehicles) {
-        try {
-          const parsedVehicles = JSON.parse(savedVehicles)
-          setVehicles(parsedVehicles)
-        } catch (error) {
-          console.error('Error parsing vehicles from localStorage:', error)
-        }
+    const loadVehicles = async () => {
+      try {
+        setLoading(true)
+        const response = await vehicleApi.getAll({ limit: 100 })
+        setVehicles(response.vehicles)
+      } catch (error) {
+        console.error('Failed to load vehicles:', error)
+        setVehicles([])
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
+    
+    loadVehicles()
   }, [])
 
-  const handleVehicleAdded = (newVehicle: any) => {
-    const updatedVehicles = [...vehicles, newVehicle]
-    setVehicles(updatedVehicles)
-    
-    // Save to localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('vehicles', JSON.stringify(updatedVehicles))
+  const handleVehicleAdded = async (newVehicle: any) => {
+    try {
+      const createdVehicle = await vehicleApi.create(newVehicle)
+      setVehicles(prev => [...prev, createdVehicle])
+    } catch (error) {
+      console.error('Failed to add vehicle:', error)
     }
   }
 

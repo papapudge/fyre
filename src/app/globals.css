@@ -135,4 +135,15 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Map specific overrides */
+  .map-container * {
+    border: none !important;
+  }
+  
+  .map-sidebar {
+    border-left: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+  }
 }

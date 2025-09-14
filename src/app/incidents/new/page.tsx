@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { incidentApi } from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -251,12 +252,9 @@ export default function NewIncidentPage() {
         specialInstructions: formData.specialInstructions
       }
 
-      // Save to localStorage (in real app, this would be an API call)
-      const existingIncidents = JSON.parse(localStorage.getItem('incidents') || '[]')
-      const updatedIncidents = [...existingIncidents, newIncident]
-      localStorage.setItem('incidents', JSON.stringify(updatedIncidents))
-
-      console.log("New incident created:", newIncident)
+      // Create incident via API
+      const createdIncident = await incidentApi.create(newIncident)
+      console.log("New incident created:", createdIncident)
       
       // Redirect to incidents page
       router.push('/incidents')

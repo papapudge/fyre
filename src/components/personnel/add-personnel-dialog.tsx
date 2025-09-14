@@ -35,14 +35,23 @@ export function AddPersonnelDialog({ onPersonnelAdded }: AddPersonnelDialogProps
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Create new personnel object
+    // Create new personnel object with API-compatible fields
     const newPersonnel = {
-      id: Date.now().toString(), // Simple ID generation
-      ...formData,
-      status: "On Duty",
-      location: formData.station,
-      hireDate: new Date().toISOString().split('T')[0],
-      currentAssignment: `${formData.station} - ${formData.rank}`
+      userId: formData.email || `user-${Date.now()}`, // Use email as userId or generate one
+      employeeId: formData.badgeNumber,
+      rank: formData.rank,
+      certifications: formData.certifications,
+      qualifications: formData.qualifications,
+      status: "ON_DUTY",
+      trainingHours: 0,
+      // Additional frontend fields for UI (not sent to API)
+      name: formData.name,
+      phone: formData.phone,
+      email: formData.email,
+      emergencyContact: formData.emergencyContact,
+      medicalInfo: formData.medicalInfo,
+      notes: formData.notes,
+      station: formData.station
     }
 
     // Call the callback to add the personnel

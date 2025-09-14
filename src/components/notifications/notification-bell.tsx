@@ -19,6 +19,18 @@ interface Notification {
   type: "incident" | "assignment" | "alert" | "info"
 }
 
+// Transform API notification to UI notification
+const transformNotification = (apiNotification: ApiNotification): Notification => ({
+  id: apiNotification.id,
+  title: apiNotification.title,
+  message: apiNotification.message,
+  time: new Date(apiNotification.createdAt).toLocaleString(),
+  read: apiNotification.isRead,
+  type: apiNotification.type.toLowerCase().includes('incident') ? 'incident' :
+        apiNotification.type.toLowerCase().includes('assignment') ? 'assignment' :
+        apiNotification.priority === 'URGENT' || apiNotification.priority === 'CRITICAL' ? 'alert' : 'info'
+})
+
 // Mock notifications will be replaced with real API data
 
 export function NotificationBell() {
@@ -32,20 +44,15 @@ export function NotificationBell() {
     const loadNotifications = async () => {
       try {
         setLoading(true)
-        const response = await notificationApi.getAll({ limit: 50 })
-        // Convert API notifications to component format
-        const convertedNotifications: Notification[] = response.notifications.map(apiNotif => ({
-          id: apiNotif.id,
-          title: apiNotif.title,
-          message: apiNotif.message,
-          time: new Date(apiNotif.createdAt).toLocaleString(),
-          read: apiNotif.isRead,
-          type: apiNotif.type.toLowerCase().replace('_', '') as "incident" | "assignment" | "alert" | "info"
-        }))
-        setNotifications(convertedNotifications)
+        // For now using a mock user ID - in real app this would come from auth context
+        const response = await notificationApi.getAll({ 
+          userId: 'current-user-id',
+          limit: 50 
+        })
+        const transformedNotifications = response.notifications.map(transformNotification)
+        setNotifications(transformedNotifications)
       } catch (error) {
         console.error('Failed to load notifications:', error)
-        // Keep empty array on error
         setNotifications([])
       } finally {
         setLoading(false)

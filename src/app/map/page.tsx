@@ -8,7 +8,7 @@ import { FireMap } from "@/components/map/fire-map"
 
 export default function MapPage() {
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col">
+    <div className="h-full w-full overflow-hidden flex flex-col m-0 p-0">
       {/* Header */}
       <div className="flex items-center justify-between p-3 bg-white border-b shadow-sm flex-shrink-0">
         <div className="flex items-center gap-2 min-w-0">

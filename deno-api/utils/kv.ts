@@ -32,8 +32,7 @@ try {
       for (const [key, value] of memoryStore.entries()) {
         // Check if the key starts with the prefix
         // For array keys like ["stations","id"], we need to check if it starts with ["stations",
-        const matches = key.startsWith(prefix + ',"') || key === prefix;
-        console.log("🔍 Checking key:", key, "against prefix:", prefix, "with comma quote:", prefix + ',"', "matches:", matches);
+        const matches = key.startsWith(prefix.slice(0, -1) + ',"') || key === prefix;
         if (matches) {
           yield { key: JSON.parse(key), value, versionstamp: "memory" };
         }

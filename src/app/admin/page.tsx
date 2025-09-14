@@ -1,11 +1,13 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { UserManagementDialog } from "@/components/admin/user-management-dialog"
 import { SystemSettingsDialog } from "@/components/admin/system-settings-dialog"
+import { getAdminStats, getRecentActivity, getSystemStatus, type AdminStats, type RecentActivity } from "@/lib/admin"
 import { 
   Settings, 
   Users, 
@@ -22,11 +24,41 @@ import {
   Download,
   Upload,
   Eye,
-  Trash2
+  Trash2,
+  RefreshCw,
+  Loader2
 } from "lucide-react"
 
 export default function AdminPage() {
   const router = useRouter()
+  const [stats, setStats] = useState<AdminStats | null>(null)
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
+  const [systemStatus, setSystemStatus] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+
+  const fetchData = async () => {
+    try {
+      setRefreshing(true)
+      const [statsData, activityData, statusData] = await Promise.all([
+        getAdminStats(),
+        getRecentActivity(),
+        getSystemStatus()
+      ])
+      setStats(statsData)
+      setRecentActivity(activityData)
+      setSystemStatus(statusData)
+    } catch (error) {
+      console.error('Error fetching admin data:', error)
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
 
   const handleSectionClick = (sectionTitle: string, itemName: string) => {
     // Navigate to appropriate pages based on section and item
@@ -47,15 +79,16 @@ export default function AdminPage() {
     }
     // Add more navigation logic for other sections as needed
   }
-  const adminSections = [
+
+  const adminSections = stats ? [
     {
       title: "User Management",
       description: "Manage users, roles, and permissions",
       icon: Users,
       items: [
-        { name: "Users", count: 24, status: "active" },
-        { name: "Roles", count: 3, status: "configured" },
-        { name: "Permissions", count: 12, status: "active" }
+        { name: "Users", count: stats.users.total, status: stats.users.active > 0 ? "active" : "inactive" },
+        { name: "Active Users", count: stats.users.active, status: "active" },
+        { name: "Personnel", count: stats.personnel.total, status: stats.personnel.onDuty > 0 ? "on_duty" : "off_duty" }
       ]
     },
     {
@@ -63,9 +96,9 @@ export default function AdminPage() {
       description: "Configure system-wide settings",
       icon: Settings,
       items: [
-        { name: "General", count: 8, status: "configured" },
-        { name: "Notifications", count: 5, status: "active" },
-        { name: "Integrations", count: 3, status: "connected" }
+        { name: "Database", count: 1, status: systemStatus?.database === 'connected' ? "connected" : "disconnected" },
+        { name: "API Status", count: 1, status: systemStatus?.api === 'online' ? "online" : "offline" },
+        { name: "Notifications", count: 1, status: systemStatus?.notifications === 'active' ? "active" : "inactive" }
       ]
     },
     {
@@ -73,30 +106,22 @@ export default function AdminPage() {
       description: "Manage stations, vehicles, and equipment",
       icon: Truck,
       items: [
-        { name: "Stations", count: 3, status: "active" },
-        { name: "Vehicles", count: 8, status: "in_service" },
-        { name: "Hydrants", count: 156, status: "active" }
+        { name: "Stations", count: stats.stations.total, status: stats.stations.active > 0 ? "active" : "inactive" },
+        { name: "Vehicles", count: stats.vehicles.total, status: stats.vehicles.inService > 0 ? "in_service" : "out_of_service" },
+        { name: "Hydrants", count: stats.hydrants.total, status: stats.hydrants.active > 0 ? "active" : "inactive" }
       ]
     },
     {
-      title: "Security & Access",
-      description: "Security settings and access control",
-      icon: Shield,
+      title: "Incident Management",
+      description: "Monitor incidents and emergency response",
+      icon: AlertTriangle,
       items: [
-        { name: "API Keys", count: 2, status: "active" },
-        { name: "Audit Logs", count: 1247, status: "monitored" },
-        { name: "Backups", count: 7, status: "current" }
+        { name: "Total Incidents", count: stats.incidents.total, status: "monitored" },
+        { name: "Active Incidents", count: stats.incidents.active, status: stats.incidents.active > 0 ? "active" : "none" },
+        { name: "Closed Incidents", count: stats.incidents.closed, status: "resolved" }
       ]
     }
-  ]
-
-  const recentActivity = [
-    { action: "User login", user: "John Smith", time: "2 minutes ago", type: "info" },
-    { action: "Incident created", user: "Sarah Johnson", time: "5 minutes ago", type: "success" },
-    { action: "Vehicle status updated", user: "Mike Davis", time: "8 minutes ago", type: "info" },
-    { action: "System backup completed", user: "System", time: "1 hour ago", type: "success" },
-    { action: "Failed login attempt", user: "Unknown", time: "2 hours ago", type: "warning" }
-  ]
+  ] : []
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -106,11 +131,22 @@ export default function AdminPage() {
       case "in_service":
       case "monitored":
       case "current":
+      case "online":
+      case "on_duty":
+      case "resolved":
         return "success"
       case "warning":
         return "warning"
       case "error":
+      case "disconnected":
+      case "offline":
+      case "out_of_service":
+      case "damaged":
         return "destructive"
+      case "inactive":
+      case "off_duty":
+      case "none":
+        return "secondary"
       default:
         return "secondary"
     }
@@ -134,13 +170,22 @@ export default function AdminPage() {
             <p className="text-gray-600">System administration and configuration</p>
           </div>
           <div className="flex items-center space-x-3">
-            <Button variant="outline" size="sm" onClick={() => alert('Database management coming soon!')}>
-              <Database className="h-4 w-4 mr-2" />
-              Database
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={fetchData}
+              disabled={refreshing}
+            >
+              {refreshing ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Refresh
             </Button>
-            <Button variant="outline" size="sm" onClick={() => alert('Security dashboard coming soon!')}>
-              <Shield className="h-4 w-4 mr-2" />
-              Security
+            <Button variant="outline" size="sm" onClick={() => router.push('/reports')}>
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Reports
             </Button>
             <SystemSettingsDialog />
           </div>
@@ -151,10 +196,16 @@ export default function AdminPage() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <div className={`w-3 h-3 rounded-full ${
+                  systemStatus?.system === 'operational' ? 'bg-green-500' : 
+                  systemStatus?.system === 'error' ? 'bg-red-500' : 'bg-yellow-500'
+                }`}></div>
                 <div>
                   <p className="text-sm font-medium">System Status</p>
-                  <p className="text-xs text-gray-600">All systems operational</p>
+                  <p className="text-xs text-gray-600">
+                    {systemStatus?.system === 'operational' ? 'All systems operational' : 
+                     systemStatus?.system === 'error' ? 'System error' : 'Loading...'}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -162,10 +213,15 @@ export default function AdminPage() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
-                <Database className="h-5 w-5 text-blue-600" />
+                <Database className={`h-5 w-5 ${
+                  systemStatus?.database === 'connected' ? 'text-green-600' : 'text-red-600'
+                }`} />
                 <div>
                   <p className="text-sm font-medium">Database</p>
-                  <p className="text-xs text-gray-600">Connected</p>
+                  <p className="text-xs text-gray-600">
+                    {systemStatus?.database === 'connected' ? 'Connected' : 
+                     systemStatus?.database === 'disconnected' ? 'Disconnected' : 'Loading...'}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -173,10 +229,15 @@ export default function AdminPage() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
-                <Globe className="h-5 w-5 text-green-600" />
+                <Globe className={`h-5 w-5 ${
+                  systemStatus?.api === 'online' ? 'text-green-600' : 'text-red-600'
+                }`} />
                 <div>
                   <p className="text-sm font-medium">API Status</p>
-                  <p className="text-xs text-gray-600">Online</p>
+                  <p className="text-xs text-gray-600">
+                    {systemStatus?.api === 'online' ? 'Online' : 
+                     systemStatus?.api === 'offline' ? 'Offline' : 'Loading...'}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -184,10 +245,15 @@ export default function AdminPage() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
-                <Bell className="h-5 w-5 text-orange-600" />
+                <Bell className={`h-5 w-5 ${
+                  systemStatus?.notifications === 'active' ? 'text-green-600' : 'text-red-600'
+                }`} />
                 <div>
                   <p className="text-sm font-medium">Notifications</p>
-                  <p className="text-xs text-gray-600">Active</p>
+                  <p className="text-xs text-gray-600">
+                    {systemStatus?.notifications === 'active' ? 'Active' : 
+                     systemStatus?.notifications === 'inactive' ? 'Inactive' : 'Loading...'}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -196,39 +262,46 @@ export default function AdminPage() {
 
         {/* Admin Sections */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {adminSections.map((section, index) => (
-            <Card key={index}>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <section.icon className="h-5 w-5" />
-                  <span>{section.title}</span>
-                </CardTitle>
-                <CardDescription>{section.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {section.items.map((item, itemIndex) => (
-                  <div key={itemIndex} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-sm text-gray-600">{item.count} items</p>
+          {loading ? (
+            <div className="col-span-2 flex items-center justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin mr-2" />
+              <span>Loading admin data...</span>
+            </div>
+          ) : (
+            adminSections.map((section, index) => (
+              <Card key={index}>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <section.icon className="h-5 w-5" />
+                    <span>{section.title}</span>
+                  </CardTitle>
+                  <CardDescription>{section.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {section.items.map((item, itemIndex) => (
+                    <div key={itemIndex} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium">{item.name}</p>
+                        <p className="text-sm text-gray-600">{item.count} items</p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={getStatusColor(item.status)}>
+                          {item.status.replace('_', ' ')}
+                        </Badge>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleSectionClick(section.title, item.name)}
+                        >
+                          Manage
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant={getStatusColor(item.status)}>
-                        {item.status}
-                      </Badge>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleSectionClick(section.title, item.name)}
-                      >
-                        Manage
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          ))}
+                  ))}
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
 
         {/* Recent Activity */}
@@ -244,25 +317,39 @@ export default function AdminPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-2 h-2 rounded-full ${
-                      activity.type === "success" ? "bg-green-500" :
-                      activity.type === "warning" ? "bg-yellow-500" :
-                      activity.type === "error" ? "bg-red-500" :
-                      "bg-blue-500"
-                    }`}></div>
-                    <div>
-                      <p className="font-medium">{activity.action}</p>
-                      <p className="text-sm text-gray-600">by {activity.user}</p>
+              {loading ? (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                  <span>Loading recent activity...</span>
+                </div>
+              ) : recentActivity.length > 0 ? (
+                recentActivity.map((activity) => (
+                  <div key={activity.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-2 h-2 rounded-full ${
+                        activity.type === "success" ? "bg-green-500" :
+                        activity.type === "warning" ? "bg-yellow-500" :
+                        activity.type === "error" ? "bg-red-500" :
+                        "bg-blue-500"
+                      }`}></div>
+                      <div>
+                        <p className="font-medium">{activity.action}</p>
+                        <p className="text-sm text-gray-600">by {activity.user}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500">
+                        {new Date(activity.timestamp).toLocaleString()}
+                      </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500">{activity.time}</p>
-                  </div>
+                ))
+              ) : (
+                <div className="text-center p-8 text-gray-500">
+                  <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No recent activity found</p>
                 </div>
-              ))}
+              )}
             </div>
             <div className="mt-4 pt-4 border-t">
               <Button 
@@ -315,9 +402,14 @@ export default function AdminPage() {
               <Button 
                 className="w-full" 
                 variant="outline"
-                onClick={() => {
-                  alert('Database backup initiated! This will take a few minutes.')
-                  // In a real app, this would trigger an actual backup
+                onClick={async () => {
+                  try {
+                    // In a real app, this would trigger an actual backup
+                    alert('Database backup initiated! This will take a few minutes.')
+                    // You could call an API endpoint here to start the backup
+                  } catch (error) {
+                    alert('Failed to initiate backup. Please try again.')
+                  }
                 }}
               >
                 <Download className="h-4 w-4 mr-2" />
@@ -327,14 +419,27 @@ export default function AdminPage() {
                 className="w-full" 
                 variant="outline"
                 onClick={() => {
-                  // Simulate data export
-                  const data = {
-                    incidents: "156 records",
-                    personnel: "24 records", 
-                    vehicles: "8 records",
-                    stations: "3 records"
+                  if (stats) {
+                    const exportData = {
+                      users: `${stats.users.total} records`,
+                      personnel: `${stats.personnel.total} records`, 
+                      vehicles: `${stats.vehicles.total} records`,
+                      stations: `${stats.stations.total} records`,
+                      incidents: `${stats.incidents.total} records`,
+                      hydrants: `${stats.hydrants.total} records`
+                    }
+                    // Create and download a JSON file
+                    const dataStr = JSON.stringify(exportData, null, 2)
+                    const dataBlob = new Blob([dataStr], {type: 'application/json'})
+                    const url = URL.createObjectURL(dataBlob)
+                    const link = document.createElement('a')
+                    link.href = url
+                    link.download = `fyre-export-${new Date().toISOString().split('T')[0]}.json`
+                    link.click()
+                    URL.revokeObjectURL(url)
+                  } else {
+                    alert('No data available to export')
                   }
-                  alert(`Exporting data: ${JSON.stringify(data, null, 2)}`)
                 }}
               >
                 <Upload className="h-4 w-4 mr-2" />
@@ -343,17 +448,7 @@ export default function AdminPage() {
               <Button 
                 className="w-full" 
                 variant="outline"
-                onClick={() => {
-                  // Show system logs in a modal or new page
-                  const logs = [
-                    "2025-01-09 15:30:00 - INFO: System backup completed successfully",
-                    "2025-01-09 15:25:00 - INFO: User john.smith logged in",
-                    "2025-01-09 15:20:00 - WARN: High memory usage detected",
-                    "2025-01-09 15:15:00 - INFO: New incident created: 20250509-003",
-                    "2025-01-09 15:10:00 - ERROR: Database connection timeout"
-                  ]
-                  alert(`Recent System Logs:\n\n${logs.join('\n')}`)
-                }}
+                onClick={() => router.push('/reports')}
               >
                 <Eye className="h-4 w-4 mr-2" />
                 System Logs
@@ -378,7 +473,15 @@ export default function AdminPage() {
                     { name: "SMS Gateway API", status: "Active", lastUsed: "5 minutes ago" },
                     { name: "Weather API", status: "Inactive", lastUsed: "1 hour ago" }
                   ]
-                  alert(`API Keys Status:\n\n${apiKeys.map(key => `${key.name}: ${key.status} (${key.lastUsed})`).join('\n')}`)
+                  const apiKeysData = apiKeys.map(key => `${key.name}: ${key.status} (${key.lastUsed})`).join('\n')
+                  const dataStr = JSON.stringify(apiKeys, null, 2)
+                  const dataBlob = new Blob([dataStr], {type: 'application/json'})
+                  const url = URL.createObjectURL(dataBlob)
+                  const link = document.createElement('a')
+                  link.href = url
+                  link.download = `api-keys-${new Date().toISOString().split('T')[0]}.json`
+                  link.click()
+                  URL.revokeObjectURL(url)
                 }}
               >
                 <Key className="h-4 w-4 mr-2" />
@@ -387,16 +490,7 @@ export default function AdminPage() {
               <Button 
                 className="w-full" 
                 variant="outline"
-                onClick={() => {
-                  const auditLogs = [
-                    "2025-01-09 15:30:00 - User john.smith accessed admin panel",
-                    "2025-01-09 15:25:00 - User sarah.johnson created new incident",
-                    "2025-01-09 15:20:00 - System settings updated by mike.davis",
-                    "2025-01-09 15:15:00 - Failed login attempt from IP 192.168.1.100",
-                    "2025-01-09 15:10:00 - User lisa.wilson password changed"
-                  ]
-                  alert(`Recent Audit Logs:\n\n${auditLogs.join('\n')}`)
-                }}
+                onClick={() => router.push('/reports')}
               >
                 <Eye className="h-4 w-4 mr-2" />
                 Audit Logs
@@ -412,7 +506,14 @@ export default function AdminPage() {
                     "IP Whitelist": "192.168.1.0/24, 10.0.0.0/8",
                     "Failed Login Lockout": "5 attempts, 15 min lockout"
                   }
-                  alert(`Security Settings:\n\n${Object.entries(securitySettings).map(([key, value]) => `${key}: ${value}`).join('\n')}`)
+                  const dataStr = JSON.stringify(securitySettings, null, 2)
+                  const dataBlob = new Blob([dataStr], {type: 'application/json'})
+                  const url = URL.createObjectURL(dataBlob)
+                  const link = document.createElement('a')
+                  link.href = url
+                  link.download = `security-settings-${new Date().toISOString().split('T')[0]}.json`
+                  link.click()
+                  URL.revokeObjectURL(url)
                 }}
               >
                 <Shield className="h-4 w-4 mr-2" />

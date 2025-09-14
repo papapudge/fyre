@@ -53,7 +53,7 @@ export function AppShell({ children }: AppShellProps) {
       
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-auto bg-white">
+        <main className={`flex-1 ${pathname === '/map' ? 'overflow-hidden' : 'overflow-auto'} bg-white`}>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={pathname}
