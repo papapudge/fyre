@@ -188,7 +188,7 @@ export default function VehiclesPage() {
     const matchesFilter = filter === "all" || vehicle.status.toLowerCase().replace(" ", "_") === filter
     const matchesSearch = vehicle.unitId.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          vehicle.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         vehicle.station.toLowerCase().includes(searchTerm.toLowerCase())
+                         vehicle.stationId.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesFilter && matchesSearch
   })
 
@@ -291,7 +291,7 @@ export default function VehiclesPage() {
                   </div>
                   
                   <div className="mt-3 flex flex-wrap gap-1">
-                    {vehicle.capabilities.slice(0, 3).map((capability, index) => (
+                    {vehicle.capabilities.slice(0, 3).map((capability: string, index: number) => (
                       <Badge key={index} variant="outline" className="text-xs">
                         {capability}
                       </Badge>
@@ -336,7 +336,7 @@ export default function VehiclesPage() {
                           <p><span className="font-medium">Unit ID:</span> {vehicle.unitId}</p>
                           <p><span className="font-medium">Type:</span> {vehicle.type}</p>
                           <p><span className="font-medium">Name:</span> {vehicle.name}</p>
-                          <p><span className="font-medium">Station:</span> {vehicle.station}</p>
+                          <p><span className="font-medium">Station:</span> {vehicle.stationId}</p>
                           <div className="flex items-center">
                             <span className="font-medium">Status:</span>
                             <Badge variant={getStatusColor(vehicle.status)} className="ml-2">
@@ -386,10 +386,10 @@ export default function VehiclesPage() {
                         <div className="text-sm">
                           <p className="flex items-center space-x-2">
                             <MapPin className="h-4 w-4" />
-                            <span>{vehicle.location}</span>
+                            <span>Lat: {vehicle.latitude || 'N/A'}, Lng: {vehicle.longitude || 'N/A'}</span>
                           </p>
                           <p className="text-gray-600 mt-1">
-                            Last updated: {formatTime(vehicle.lastLocationUpdate)}
+                            Last updated: {vehicle.lastLocationUpdate ? formatTime(vehicle.lastLocationUpdate) : 'Never'}
                           </p>
                         </div>
                       </div>
@@ -401,14 +401,14 @@ export default function VehiclesPage() {
                           <div className="flex-1 bg-gray-200 rounded-full h-2">
                             <div 
                               className={`h-2 rounded-full ${
-                                vehicle.fuelLevel > 75 ? "bg-green-500" :
-                                vehicle.fuelLevel > 50 ? "bg-yellow-500" : "bg-red-500"
+                                (vehicle.fuelLevel || 0) > 75 ? "bg-green-500" :
+                                (vehicle.fuelLevel || 0) > 50 ? "bg-yellow-500" : "bg-red-500"
                               }`}
-                              style={{ width: `${vehicle.fuelLevel}%` }}
+                              style={{ width: `${vehicle.fuelLevel || 0}%` }}
                             ></div>
                           </div>
-                          <span className={`text-sm font-medium ${getFuelColor(vehicle.fuelLevel)}`}>
-                            {vehicle.fuelLevel}%
+                          <span className={`text-sm font-medium ${getFuelColor(vehicle.fuelLevel || 0)}`}>
+                            {vehicle.fuelLevel || 0}%
                           </span>
                         </div>
                       </div>
@@ -429,7 +429,7 @@ export default function VehiclesPage() {
                       <div className="space-y-2">
                         <h4 className="font-medium">Current Crew</h4>
                         <div className="space-y-1">
-                          {vehicle.crew.map((member, index) => (
+                          {['Driver', 'Operator', 'Firefighter'].map((member, index) => (
                             <Badge key={index} variant="secondary" className="mr-1 mb-1">
                               {member}
                             </Badge>
@@ -441,8 +441,8 @@ export default function VehiclesPage() {
                       <div className="space-y-2">
                         <h4 className="font-medium">Maintenance</h4>
                         <div className="text-sm space-y-1">
-                          <p><span className="font-medium">Last Service:</span> {new Date(vehicle.lastService).toLocaleDateString()}</p>
-                          <p><span className="font-medium">Next Service:</span> {new Date(vehicle.nextService).toLocaleDateString()}</p>
+                          <p><span className="font-medium">Last Service:</span> {vehicle.lastService ? new Date(vehicle.lastService).toLocaleDateString() : 'Not available'}</p>
+                          <p><span className="font-medium">Next Service:</span> {vehicle.nextService ? new Date(vehicle.nextService).toLocaleDateString() : 'Not scheduled'}</p>
                         </div>
                       </div>
 

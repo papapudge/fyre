@@ -14,9 +14,7 @@ import {
   Shield, 
   Database,
   Bell,
-  MapPin,
   Truck,
-  Building2,
   AlertTriangle,
   BarChart3,
   Key,
@@ -24,7 +22,6 @@ import {
   Download,
   Upload,
   Eye,
-  Trash2,
   RefreshCw,
   Loader2
 } from "lucide-react"
@@ -33,7 +30,7 @@ export default function AdminPage() {
   const router = useRouter()
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
-  const [systemStatus, setSystemStatus] = useState<any>(null)
+  const [systemStatus, setSystemStatus] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -152,14 +149,6 @@ export default function AdminPage() {
     }
   }
 
-  const getActivityColor = (type: string) => {
-    switch (type) {
-      case "success": return "text-green-600"
-      case "warning": return "text-yellow-600"
-      case "error": return "text-red-600"
-      default: return "text-blue-600"
-    }
-  }
 
   return (
       <div className="p-6 space-y-6">

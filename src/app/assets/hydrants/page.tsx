@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { type Hydrant } from "@/lib/api"
 import { 
   Droplets, 
   Plus, 
@@ -74,7 +75,7 @@ const mockHydrants = [
 ]
 
 export default function HydrantsPage() {
-  const [hydrants, setHydrants] = useState([])
+  const [hydrants, setHydrants] = useState<Hydrant[]>([])
   const [selectedHydrant, setSelectedHydrant] = useState<string | null>(null)
   const [filter, setFilter] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
@@ -98,9 +99,11 @@ export default function HydrantsPage() {
   }
 
   const filteredHydrants = hydrants.filter(hydrant => {
-    const matchesFilter = filter === "all" || hydrant.status.toLowerCase() === filter
+    // Since hydrant doesn't have status, we'll use a mock status based on inspection date
+    const status = hydrant.nextInspection && new Date(hydrant.nextInspection) < new Date() ? "damaged" : "operational"
+    const matchesFilter = filter === "all" || status === filter
     const matchesSearch = hydrant.hydrantId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         hydrant.location.toLowerCase().includes(searchTerm.toLowerCase())
+                         hydrant.notes?.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesFilter && matchesSearch
   })
 
@@ -180,7 +183,7 @@ export default function HydrantsPage() {
                         </div>
                         <div>
                           <CardTitle className="text-lg text-gray-900">{hydrant.hydrantId}</CardTitle>
-                          <CardDescription className="text-gray-700">{hydrant.location}</CardDescription>
+                          <CardDescription className="text-gray-700">Lat: {hydrant.latitude}, Lng: {hydrant.longitude}</CardDescription>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -207,7 +210,7 @@ export default function HydrantsPage() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <Wrench className="h-4 w-4 text-gray-600" />
-                        <span className="text-gray-800">Next: {new Date(hydrant.nextInspection).toLocaleDateString()}</span>
+                        <span className="text-gray-800">Next: {hydrant.nextInspection ? new Date(hydrant.nextInspection).toLocaleDateString() : 'Not scheduled'}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -247,7 +250,7 @@ export default function HydrantsPage() {
                         <h4 className="font-medium text-gray-900">Basic Information</h4>
                         <div className="text-sm space-y-1">
                           <p><span className="font-medium text-gray-800">ID:</span> <span className="text-gray-900">{hydrant.hydrantId}</span></p>
-                          <p><span className="font-medium text-gray-800">Location:</span> <span className="text-gray-900">{hydrant.location}</span></p>
+                          <p><span className="font-medium text-gray-800">Location:</span> <span className="text-gray-900">Lat: {hydrant.latitude}, Lng: {hydrant.longitude}</span></p>
                           <p><span className="font-medium text-gray-800">Status:</span>
                             <Badge variant={getStatusColor(hydrant.status)} className="ml-2">
                               <StatusIcon className="h-3 w-3 mr-1" />
@@ -270,8 +273,8 @@ export default function HydrantsPage() {
                       <div className="space-y-2">
                         <h4 className="font-medium text-gray-900">Inspection Schedule</h4>
                         <div className="text-sm space-y-1">
-                          <p><span className="font-medium text-gray-800">Last Inspection:</span> <span className="text-gray-900">{new Date(hydrant.lastInspection).toLocaleDateString()}</span></p>
-                          <p><span className="font-medium text-gray-800">Next Inspection:</span> <span className="text-gray-900">{new Date(hydrant.nextInspection).toLocaleDateString()}</span></p>
+                          <p><span className="font-medium text-gray-800">Last Inspection:</span> <span className="text-gray-900">{hydrant.lastInspection ? new Date(hydrant.lastInspection).toLocaleDateString() : 'Not available'}</span></p>
+                          <p><span className="font-medium text-gray-800">Next Inspection:</span> <span className="text-gray-900">{hydrant.nextInspection ? new Date(hydrant.nextInspection).toLocaleDateString() : 'Not scheduled'}</span></p>
                         </div>
                       </div>
 

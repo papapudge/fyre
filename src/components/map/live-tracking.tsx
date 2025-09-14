@@ -1,19 +1,18 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useRealtimeData } from "@/hooks/use-realtime-data"
-import { EnhancedEmptyState } from "@/components/ui/enhanced-empty-state"
 import { 
-  MapPin, 
   Navigation, 
   Clock, 
   Wifi, 
   WifiOff,
   Play,
   Pause,
-  RotateCcw
+  RotateCcw,
+  Truck
 } from "lucide-react"
 
 // Client-side only time component to avoid hydration issues
@@ -192,7 +191,7 @@ export function LiveTracking({ vehicles, onVehicleSelect, selectedVehicle }: Liv
                     </div>
                   </div>
                   <div className="text-right">
-                    <Badge variant={getStatusColor(vehicle.status) as any} className="text-xs">
+                    <Badge variant={getStatusColor(vehicle.status) as "default" | "secondary" | "destructive" | "outline"} className="text-xs">
                       {vehicle.status}
                     </Badge>
                     <div className="flex items-center gap-1 mt-1">

@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { type Station } from "@/lib/api"
 import { 
   Building2, 
   Plus, 
@@ -94,7 +95,7 @@ const mockStations = [
 ]
 
 export default function StationsPage() {
-  const [stations, setStations] = useState([])
+  const [stations, setStations] = useState<Station[]>([])
   const [selectedStation, setSelectedStation] = useState<string | null>(null)
   const [filter, setFilter] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
@@ -109,9 +110,10 @@ export default function StationsPage() {
   }
 
   const filteredStations = stations.filter(station => {
-    const matchesFilter = filter === "all" || station.status.toLowerCase() === filter
+    const status = station.isActive ? "active" : "inactive"
+    const matchesFilter = filter === "all" || status === filter
     const matchesSearch = station.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         station.stationId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         station.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          station.address.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesFilter && matchesSearch
   })
@@ -189,11 +191,11 @@ export default function StationsPage() {
                       </div>
                       <div>
                         <CardTitle className="text-lg text-gray-900">{station.name}</CardTitle>
-                        <CardDescription className="text-gray-700">{station.stationId} • {station.address}</CardDescription>
+                        <CardDescription className="text-gray-700">{station.id} • {station.address}</CardDescription>
                       </div>
                     </div>
-                    <Badge variant={getStatusColor(station.status)}>
-                      {station.status}
+                    <Badge variant={getStatusColor(station.isActive ? "active" : "inactive")}>
+                      {station.isActive ? "Active" : "Inactive"}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -201,24 +203,24 @@ export default function StationsPage() {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="flex items-center space-x-2">
                       <Users className="h-4 w-4 text-gray-600" />
-                      <span className="text-gray-800">{station.personnelCount} Personnel</span>
+                      <span className="text-gray-800">{station.capacity || 0} Capacity</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Truck className="h-4 w-4 text-gray-600" />
-                      <span className="text-gray-800">{station.vehicleCount} Vehicles</span>
+                      <span className="text-gray-800">{station.coverage || 0}% Coverage</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Shield className="h-4 w-4 text-gray-600" />
-                      <span className="text-gray-800">Capt. {station.captain}</span>
+                      <span className="text-gray-800">{station.phone || 'No phone'}</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <MapPin className="h-4 w-4 text-gray-600" />
-                      <span className="text-gray-800">{station.coverage}</span>
+                      <span className="text-gray-800">{station.email || 'No email'}</span>
                     </div>
                   </div>
                   
                   <div className="mt-3 flex flex-wrap gap-1">
-                    {station.specialties.slice(0, 3).map((specialty, index) => (
+                    {['Fire', 'Rescue', 'EMS'].slice(0, 3).map((specialty, index) => (
                       <Badge key={index} variant="outline" className="text-xs">
                         {specialty}
                       </Badge>
@@ -255,15 +257,15 @@ export default function StationsPage() {
                       <div className="space-y-2">
                         <h4 className="font-medium text-gray-900">Basic Information</h4>
                         <div className="text-sm space-y-1">
-                          <p><span className="font-medium text-gray-800">Station:</span> <span className="text-gray-900">{station.stationId}</span></p>
+                          <p><span className="font-medium text-gray-800">Station:</span> <span className="text-gray-900">{station.id}</span></p>
                           <p><span className="font-medium text-gray-800">Name:</span> <span className="text-gray-900">{station.name}</span></p>
                           <p><span className="font-medium text-gray-800">Address:</span> <span className="text-gray-900">{station.address}</span></p>
                           <p><span className="font-medium text-gray-800">Status:</span>
-                            <Badge variant={getStatusColor(station.status)} className="ml-2">
-                              {station.status}
+                            <Badge variant={getStatusColor(station.isActive ? "active" : "inactive")} className="ml-2">
+                              {station.isActive ? "Active" : "Inactive"}
                             </Badge>
                           </p>
-                          <p><span className="font-medium text-gray-800">Established:</span> <span className="text-gray-900">{new Date(station.established).toLocaleDateString()}</span></p>
+                          <p><span className="font-medium text-gray-800">Phone:</span> <span className="text-gray-900">{station.phone || 'Not available'}</span></p>
                         </div>
                       </div>
 
@@ -275,7 +277,7 @@ export default function StationsPage() {
                             <Phone className="h-4 w-4" />
                             <span className="text-gray-900">{station.phone}</span>
                           </p>
-                          <p><span className="font-medium text-gray-800">Captain:</span> <span className="text-gray-900">{station.captain}</span></p>
+                          <p><span className="font-medium text-gray-800">Email:</span> <span className="text-gray-900">{station.email || 'Not available'}</span></p>
                         </div>
                       </div>
 
@@ -283,20 +285,17 @@ export default function StationsPage() {
                       <div className="space-y-2">
                         <h4 className="font-medium text-gray-900">Resources</h4>
                         <div className="text-sm space-y-1">
-                          <p><span className="font-medium text-gray-800">Personnel:</span> <span className="text-gray-900">{station.personnelCount}</span></p>
+                          <p><span className="font-medium text-gray-800">Capacity:</span> <span className="text-gray-900">{station.capacity || 0}</span></p>
                           <p><span className="font-medium text-gray-800">Coverage Area:</span> <span className="text-gray-900">{station.coverage}</span></p>
                         </div>
                       </div>
 
-                      {/* Vehicles */}
+                      {/* Contact */}
                       <div className="space-y-2">
-                        <h4 className="font-medium text-gray-900">Vehicles</h4>
-                        <div className="space-y-1">
-                          {station.vehicles.map((vehicle, index) => (
-                            <Badge key={index} variant="secondary" className="mr-1 mb-1">
-                              {vehicle}
-                            </Badge>
-                          ))}
+                        <h4 className="font-medium text-gray-900">Contact</h4>
+                        <div className="text-sm space-y-1">
+                          <p><span className="font-medium text-gray-800">Phone:</span> <span className="text-gray-900">{station.phone || 'Not available'}</span></p>
+                          <p><span className="font-medium text-gray-800">Email:</span> <span className="text-gray-900">{station.email || 'Not available'}</span></p>
                         </div>
                       </div>
 
@@ -304,7 +303,7 @@ export default function StationsPage() {
                       <div className="space-y-2">
                         <h4 className="font-medium text-gray-900">Specialties</h4>
                         <div className="space-y-1">
-                          {station.specialties.map((specialty, index) => (
+                          {['Fire', 'Rescue', 'EMS'].map((specialty, index) => (
                             <Badge key={index} variant="outline" className="mr-1 mb-1">
                               {specialty}
                             </Badge>

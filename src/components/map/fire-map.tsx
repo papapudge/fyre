@@ -1,11 +1,9 @@
 "use client"
 
 import { useState, useCallback, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { 
-  MapPin, 
   Eye, 
   EyeOff, 
   Navigation, 
@@ -16,11 +14,7 @@ import {
   Droplets,
   AlertTriangle,
   Users,
-  ChevronLeft,
-  ChevronRight,
   Settings,
-  List,
-  X,
   Locate
 } from "lucide-react"
 import dynamic from "next/dynamic"
@@ -34,7 +28,6 @@ import {
   hydrantApi, 
   incidentApi 
 } from "@/lib/api"
-import { EnhancedEmptyState } from "@/components/ui/enhanced-empty-state"
 
 // Simple fallback map (no Google Maps API required)
 const MapContent = dynamic(() => import('./simple-map-fallback'), {
@@ -360,15 +353,12 @@ export function FireMap() {
   const [hydrants, setHydrants] = useState<Hydrant[]>([])
   const [incidents, setIncidents] = useState<Incident[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [showTrackingDrawer, setShowTrackingDrawer] = useState(false)
 
   // Load data from API with fallback to mock data
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true)
-        setError(null)
 
         // Load all data in parallel
         const [stationsRes, vehiclesRes, hydrantsRes, incidentsRes] = await Promise.all([
